@@ -2,5 +2,17 @@
   "name": "hms",
   "version": "0.0.0",
   "description": "Work in progress. Ship all kinds of services",
-  "repository": "git://github.com/mafintosh/hms.git"
+  "repository": "git://github.com/mafintosh/hms.git",
+  "dependencies": {
+    "multiplex": "~1.0.0",
+    "once": "~1.3.0",
+    "pump": "~0.2.3",
+    "JSONStream": "~0.7.1",
+    "rimraf": "~2.2.5",
+    "tar-fs": "~0.1.6",
+    "xtend": "~2.1.2",
+    "root": "~0.6.0",
+    "thunky": "~0.1.0",
+    "cable": "~1.3.0"
+  }
 }
