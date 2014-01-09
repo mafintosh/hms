@@ -1,0 +1,71 @@
+#!/usr/bin/env node
+
+var tab = require('tabalot');
+var ids = [];
+
+tab('*')
+	('--remote', '-r')
+
+tab('list')
+	(ids)
+	(function(id, opts) {
+		require('../commands/list')(id, opts);
+	});
+
+tab('add')
+	(ids)
+	('--start', '-s')
+	('--build', '-b')
+	('--docks', '-d')
+	('--env', '-e')
+	(function(id, opts) {
+		require('../commands/add')(id, opts);
+	});
+
+tab('update')
+	(ids)
+	('--start', '-s')
+	('--build', '-b')
+	('--docks', '-d')
+	('--env', '-e')
+	(function(id, opts) {
+		require('../commands/update')(id, opts);
+	});
+
+tab('remove')
+	(ids)
+	(function(id, opts) {
+		require('../commands/remove')(id, opts);
+	});
+
+tab('start')
+	(ids)
+	(function(id, opts) {
+		require('../commands/start')(id, opts);
+	});
+
+tab('restart')
+	(ids)
+	(function(id, opts) {
+		require('../commands/restart')(id, opts);
+	});
+
+tab('stop')
+	(ids)
+	(function(id, opts) {
+		require('../commands/stop')(id, opts);
+	});
+
+tab('ps')
+	(ids)
+	(function(id, opts) {
+		require('../commands/ps')(id, opts);
+	});
+
+tab('log')
+	(ids)
+	(function(id, opts) {
+		require('../commands/log')(id, opts);
+	});
+
+tab.parse();
