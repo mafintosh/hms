@@ -28,6 +28,7 @@ tab('update')
 	('--build', '-b')
 	('--docks', '-d')
 	('--env', '-e')
+	('--env-add')
 	(function(id, opts) {
 		require('../commands/update')(id, opts);
 	});
