@@ -24,6 +24,6 @@
   },
   "main": "./lib/client.js",
   "bin": {
-    "hms": "./bin/hms"
+    "hms": "./bin/hms.js"
   }
 }
