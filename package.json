@@ -19,7 +19,8 @@
     "relative-date": "~1.1.1",
     "progress-stream": "~0.4.0",
     "http-ssh-agent": "~0.1.4",
-    "pingable": "~0.2.0"
+    "pingable": "~0.2.0",
+    "readtoend": "0.0.1"
   },
   "main": "./lib/client.js",
   "bin": {
