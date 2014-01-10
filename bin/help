@@ -1,0 +1,18 @@
+Usage: hms [command] [options?]
+
+Available commands are:
+  completion   setup tab completion
+  add          add a new service
+  update       update an existing service
+  remove       remove and stop a service
+  deploy       deploy cwd to your service
+  list         lists available services
+  start        start service processes
+  stop         stop service processes
+  restart      restart service processes
+  log          tail service logs
+  dock         start a service dock
+  terminal     start a service terminal
+
+A remote dock or terminal can specified using
+  --remote,-r  user@hostname

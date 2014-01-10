@@ -2,9 +2,15 @@
 
 var tab = require('tabalot');
 var ids = [];
+var noop = [];
+
+var help = function() {
+	process.stderr.write(require('fs').readFileSync(require('path').join(__dirname, 'help')));
+	process.exit(1);
+};
 
 tab('*')
-	('--remote', '-r')
+	('--remote', '-r', '@host');
 
 tab('list')
 	(ids)
@@ -69,4 +75,30 @@ tab('log')
 		require('../commands/log')(id, opts);
 	});
 
-tab.parse();
+tab('deploy')
+	(ids)
+	(function(id, opts) {
+		require('../commands/deploy')(id, opts);
+	});
+
+tab('dock')
+	('--port', '-p')
+	(function(opts) {
+		require('../commands/dock')(opts);
+	});
+
+tab('terminal')
+	('--port', '-p')
+	('--dock', '-d')
+	(function(opts) {
+		require('../commands/terminal')(opts);
+	});
+
+tab()
+	('--version', '-v')
+	(function(opts) {
+		if (opts.version) return console.log('v'+require('../package.json').version);
+		help();
+	})
+
+tab.parse() || help();
