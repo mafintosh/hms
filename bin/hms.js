@@ -1,8 +1,19 @@
 #!/usr/bin/env node
 
 var tab = require('tabalot');
-var ids = [];
 var noop = [];
+
+var ids = function(word, opts, cb) {
+	var hms = require('../');
+	var c = hms(opts.remote);
+	c.list(function(err, list) {
+		if (err) return cb(err);
+		list = list.map(function(service) {
+			return service.id;
+		});
+		cb(null, list);
+	});
+};
 
 var help = function() {
 	process.stderr.write(require('fs').readFileSync(require('path').join(__dirname, 'help')));
