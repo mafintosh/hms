@@ -12,9 +12,11 @@ var pump = require('pump');
 var respawns = require('respawn-group');
 var protocol = require('../lib/protocol');
 var parse = require('../lib/parse-remote');
+var subscriptions = require('../lib/subscriptions');
 var pkg = require('../package.json');
 
-var HOST = os.hostname();
+var noop = function() {};
+
 var HANDSHAKE =
 	'HTTP/1.1 101 Swiching Protocols\r\n'+
 	'Upgrade: hms-protocol\r\n'+
@@ -29,6 +31,34 @@ module.exports = function(opts) {
 	var server = root();
 	var db = flat.sync('db');
 	var mons = respawns();
+	var subs = subscriptions();
+	var dockId = opts.id || os.hostname();
+
+	subs.on('subscribe', function(id, protocol, count) {
+		if (count > 1) return;
+		log(id, 'forwarding events and output');
+	});
+
+	subs.on('unsubscribe', function(id, protocol, count) {
+		if (count) return;
+		log(id, 'unforwarding event and output');
+	});
+
+	mons.on('stdout', function(mon, data) {
+		subs.publish('stdout', mon.id, data);
+	});
+
+	mons.on('stderr', function(mon, data) {
+		subs.publish('stderr', mon.id, data);
+	});
+
+	mons.on('spawn', function(mon, child) {
+		subs.publish('spawn', mon.id, child.pid);
+	});
+
+	mons.on('exit', function(mon, code) {
+		subs.publish('exit', mon.id, code);
+	});
 
 	var remote = parse(opts.remote);
 	var info = {};
@@ -44,6 +74,34 @@ module.exports = function(opts) {
 		info[id] = {version:service.version, deployed:service.deployed};
 		mons.add(id, fresh);
 		return true;
+	};
+
+	var onstatuschange = function(id, status, cb) {
+		if (!db.has(id)) return onnotfound(cb);
+		onmon(id, db.get(id));
+
+		var ondone = function() {
+			if (!db.has(id)) return cb();
+			var s = db.get(id);
+			s.stopped = status === 'stop';
+			db.put(id, s, cb);
+		};
+
+		switch (status) {
+			case 'start':
+			log(id, 'starting process');
+			mons.start(id);
+			return ondone();
+
+			case 'restart':
+			log(id, 'restarting process');
+			mons.restart(id);
+			return ondone();
+
+			case 'stop':
+			log(id, 'stopping process');
+			return mons.stop(id, ondone);
+		}
 	};
 
 	var onprotocol = function(protocol, docking) {
@@ -81,7 +139,7 @@ module.exports = function(opts) {
 
 			var req = http.get(xtend(remote, {
 				path:'/'+id,
-				headers:{origin:HOST}
+				headers:{origin:dockId}
 			}));
 
 			log(id, 'fetching build from remote');
@@ -104,6 +162,7 @@ module.exports = function(opts) {
 		});
 
 		protocol.on('remove', function(id, cb) {
+			if (!docking) return cb(new Error('Cannot remove on a dock'));
 			log(id, 'stopping and removing process');
 			mons.remove(id, function() {
 				db.del(id, cb);
@@ -111,34 +170,22 @@ module.exports = function(opts) {
 		});
 
 		protocol.on('update', function(id, opts, cb) {
+			if (!docking) return cb(new Error('Cannot update on a dock'));
 			if (!db.has(id)) return onnotfound(cb);
 			log(id, 'updating process');
 			cb();
 		});
 
 		protocol.on('restart', function(id, cb) {
-			if (!db.has(id)) return onnotfound(cb);
-			log(id, 'restarting process');
-			onmon(id, db.get(id));
-			mons.restart(id);
-			cb();
+			onstatuschange(id, 'restart', cb);
 		});
 
 		protocol.on('start', function(id, cb) {
-			if (!db.has(id)) return onnotfound(cb);
-			log(id, 'starting process');
-			onmon(id, db.get(id));
-			mons.start(id);
-			cb();
+			onstatuschange(id, 'start', cb);
 		});
 
 		protocol.on('stop', function(id, cb) {
-			if (!db.has(id)) return onnotfound(cb);
-			log(id, 'stopping process');
-			onmon(id, db.get(id));
-			mons.stop(id, function() {
-				cb();
-			});
+			onstatuschange(id, 'stop', cb);
 		});
 
 		protocol.on('ps', function(cb) {
@@ -146,7 +193,24 @@ module.exports = function(opts) {
 				return xtend(mon.toJSON(), info[mon.id]);
 			});
 
-			cb(null, [{host:os.hostname(), list:list}]);
+			cb(null, [{id:dockId, list:list}]);
+		});
+
+		protocol.on('subscribe', function(id, cb) {
+			if (!docking && !db.has(id)) return onnotfound(cb);
+			subs.subscribe(id, protocol);
+			cb();
+		});
+
+		protocol.once('subscribe', function() {
+			protocol.on('close', function() {
+				subs.clear(protocol);
+			});
+		});
+
+		protocol.on('unsubscribe', function(id, cb) {
+			subs.unsubscribe(id, protocol);
+			cb();
 		});
 	};
 
@@ -155,7 +219,7 @@ module.exports = function(opts) {
 		var req = http.request(xtend(remote, {
 			method:'CONNECT',
 			path:'/dock',
-			headers:{origin:HOST}
+			headers:{origin:dockId}
 		}));
 
 		var reconnect = once(function() {
@@ -188,11 +252,13 @@ module.exports = function(opts) {
 		onprotocol(protocol(socket, data), false);
 	});
 
-	server.listen(opts.port || 10002, function(addr) {
-		log('hms', 'listening on', addr);
+	var port = opts.port || 10002;
+	server.listen(port, function(addr) {
+		log('hms', dockId, 'listening on', port);
 
 		db.keys().forEach(function(key) {
-
+			var service = db.get(key);
+			if (!service.stopped) onstatuschange(key, 'start', noop);
 		});
 
 		connect();

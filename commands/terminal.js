@@ -13,9 +13,11 @@ var thunky = require('thunky');
 var once = require('once');
 var proc = require('child_process');
 var protocol = require('../lib/protocol');
+var subscriptions = require('../lib/subscriptions');
 var pkg = require('../package.json');
 
-var HOST = os.hostname();
+var noop = function() {};
+
 var HANDSHAKE =
 	'HTTP/1.1 101 Swiching Protocols\r\n'+
 	'Upgrade: hms-protocol\r\n'+
@@ -29,6 +31,7 @@ var log = function(tag) {
 module.exports = function(opts) {
 	var server = root();
 	var db = flat.sync('db');
+	var subs = subscriptions();
 	var docks = [];
 
 	var ondock = function(protocol, host) {
@@ -37,12 +40,32 @@ module.exports = function(opts) {
 			log('hms', 'connection to dock ('+host+') dropped');
 		});
 
+		protocol.on('stdout', function(id, data) {
+			subs.publish('stdout', id, data);
+		});
+
+		protocol.on('stderr', function(id, data) {
+			subs.publish('stderr', id, data);
+		});
+
+		protocol.on('spawn', function(id, pid) {
+			subs.publish('spawn', id, pid);
+		});
+
+		protocol.on('exit', function(id, code) {
+			subs.publish('exit', id, code);
+		});
+
 		docks.push(protocol);
 		log('hms', 'connection to dock ('+host+') established');
+
+		subs.subscriptions().forEach(function(key) {
+			protocol.subscribe(key);
+		});
 	};
 
 	var forEach = function(fn, cb) {
-		cb = once(cb);
+		cb = once(cb || noop);
 
 		var result = [];
 		var missing = docks.length;
@@ -58,10 +81,27 @@ module.exports = function(opts) {
 			cb(null, result);
 		};
 
+		if (!missing) return cb(null, result);
 		docks.forEach(function(dock) {
 			fn(dock, onresponse);
 		});
 	};
+
+	subs.on('subscribe', function(id, protocol, count) {
+		if (count > 1) return;
+		log(id, 'subscribing to service events and logs');
+		forEach(function(dock, next) {
+			dock.subscribe(id, next);
+		});
+	});
+
+	subs.on('unsubscribe', function(id, protocol, count) {
+		if (count) return;
+		log(id, 'unsubscribing to service events and logs');
+		forEach(function(dock, next) {
+			dock.unsubscribe(id, next);
+		});
+	});
 
 	var save = function(id, opts, cb) {
 		var service = db.get(id) || {id:id};
@@ -79,7 +119,7 @@ module.exports = function(opts) {
 		if (!db.has(id)) return cb(new Error('Service not found'));
 
 		var service = db.get(id);
-		var upd = {start:service.start, build:service.build, env:service.env};
+		var upd = {start:service.start, build:service.build, env:service.env, docks:service.docks};
 
 		service.stopped = status === 'stop';
 		db.put(id, service, function(err) {
@@ -155,6 +195,35 @@ module.exports = function(opts) {
 			forEach(function(dock, next) {
 				dock.ps(next);
 			}, cb);
+		});
+
+		var unsubscribe = function(id, cb) {
+			if (typeof cb !== 'function') cb = noop;
+			var subs = subscriptions[id] = subscriptions[id] || [];
+			var i = subs.indexOf(protocol);
+			if (i === -1) return cb();
+
+			log(id, 'client unsubscribing');
+			if (subs.length === 1) delete subscriptions[id];
+			else subs.splice(i, 1);
+			cb();
+		};
+
+		protocol.on('subscribe', function(id, cb) {
+			if (!db.has(id)) return cb(new Error('Service not found'));
+			subs.subscribe(id, protocol);
+			cb();
+		});
+
+		protocol.once('subscribe', function() {
+			protocol.on('close', function() {
+				subs.clear(protocol);
+			});
+		});
+
+		protocol.on('unsubscribe', function(id, cb) {
+			subs.unsubscribe(id, protocol);
+			cb();
 		});
 	};
 
@@ -256,6 +325,6 @@ module.exports = function(opts) {
 
 	var port = opts.port || 10002;
 	server.listen(port, function() {
-		log('hms', 'listening on', HOST+':'+port);
+		log('hms', 'listening on', port);
 	});
 };
