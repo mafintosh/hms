@@ -24,7 +24,7 @@ var HANDSHAKE =
 	'Connection: Upgrade\r\n\r\n';
 
 var log = function(tag) {
-	tag = '[term] ['+tag+']';
+	tag = tag ? '[term] ['+tag+']' : '[term]';
 	console.log.apply(null, arguments);
 };
 
@@ -37,7 +37,7 @@ module.exports = function(opts) {
 	var ondock = function(protocol, host) {
 		protocol.on('close', function() {
 			docks.splice(docks.indexOf(protocol), 1);
-			log('sys', 'connection to dock ('+host+') dropped');
+			log(null, 'connection to dock ('+host+') dropped');
 		});
 
 		protocol.on('stdout', function(id, origin, data) {
@@ -57,7 +57,7 @@ module.exports = function(opts) {
 		});
 
 		docks.push(protocol);
-		log('sys', 'connection to dock ('+host+') established');
+		log(null, 'connection to dock ('+host+') established');
 
 		subs.subscriptions().forEach(function(key) {
 			protocol.subscribe(key);
@@ -325,7 +325,7 @@ module.exports = function(opts) {
 
 	var port = opts.port || 10002;
 	server.listen(port, function() {
-		log('sys', 'listening on', port);
+		log(null, 'listening on', port);
 		if (opts.dock) require('./dock')({port:port+1, remote:'127.0.0.1:'+port, id:opts.id});
 	});
 };

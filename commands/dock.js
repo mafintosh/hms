@@ -23,7 +23,7 @@ var HANDSHAKE =
 	'Connection: Upgrade\r\n\r\n';
 
 var log = function(tag) {
-	tag = '[dock] ['+tag+']';
+	tag = tag ? '[dock] ['+tag+']' : '[dock]';
 	console.log.apply(null, arguments);
 };
 
@@ -225,14 +225,14 @@ module.exports = function(opts) {
 		var reconnect = once(function() {
 			if (dropped) return setTimeout(connect, 5000);
 			dropped = true;
-			log('sys', 'connection to remote dropped');
+			log(null, 'connection to remote dropped');
 			setTimeout(connect, 2500);
 		});
 
 		req.on('error', reconnect);
 		req.on('connect', function(res, socket, data) {
 			dropped = false;
-			log('sys', 'connection to remote established');
+			log(null, 'connection to remote established');
 			var p = protocol(socket, data);
 			p.ping();
 			p.on('close', reconnect);
@@ -254,7 +254,7 @@ module.exports = function(opts) {
 
 	var port = opts.port || 10002;
 	server.listen(port, function(addr) {
-		log('sys', origin, 'listening on', port);
+		log(null, origin, 'listening on', port);
 
 		db.keys().forEach(function(key) {
 			var service = db.get(key);
@@ -265,7 +265,7 @@ module.exports = function(opts) {
 	});
 
 	var shutdown = function() {
-		log('sys', 'shutting down');
+		log(null, 'shutting down');
 		mons.shutdown(function() {
 			process.exit(0);
 		});
