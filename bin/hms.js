@@ -97,7 +97,7 @@ tab('log')
 
 tab('deploy')
 	(ids)
-	('--revision', '-r')
+	('--revision')
 	('--force', '-f')
 	(function(id, opts) {
 		require('../commands/deploy')(id, opts);
