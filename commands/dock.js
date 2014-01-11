@@ -9,6 +9,7 @@ var xtend = require('xtend');
 var rimraf = require('rimraf');
 var once = require('once');
 var pump = require('pump');
+var select = require('select-keys');
 var respawns = require('respawn-group');
 var protocol = require('../lib/protocol');
 var parse = require('../lib/parse-remote');
@@ -29,7 +30,7 @@ var log = function(tag) {
 
 module.exports = function(opts) {
 	var server = root();
-	var db = flat.sync('db');
+	var db = typeof opts.db == 'object' && opts.db || flat.sync('db');
 	var mons = respawns();
 	var subs = subscriptions();
 	var origin = opts.id || os.hostname();
@@ -66,8 +67,9 @@ module.exports = function(opts) {
 	var onmon = function(id, service) {
 		if (!service.start || !service.cwd) return false;
 
+		var env = xtend(service.env);
 		var stale = mons.get(id) || {};
-		var fresh = {command:['/bin/sh', '-c', service.start, id], cwd:service.cwd, env:service.env};
+		var fresh = {command:['/bin/sh', '-c', service.start, id], cwd:service.cwd, env:env};
 
 		if (JSON.stringify({command:stale.command, cwd:stale.cwd, env:stale.env}) === JSON.stringify(fresh)) return false;
 
@@ -173,7 +175,7 @@ module.exports = function(opts) {
 			if (!docking) return cb(new Error('Cannot update on a dock'));
 			if (!db.has(id)) return onnotfound(cb);
 			log(id, 'updating process');
-			cb();
+			db.put(id, xtend(db.get(id), select(opts, ['start', 'build', 'env', 'docks'])), cb);
 		});
 
 		protocol.on('restart', function(id, cb) {

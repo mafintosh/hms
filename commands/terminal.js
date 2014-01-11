@@ -5,6 +5,8 @@ var fs = require('fs');
 var rimraf = require('rimraf');
 var path = require('path');
 var tar = require('tar-fs');
+var select = require('select-keys');
+var xtend = require('xtend');
 var zlib = require('zlib');
 var url = require('url');
 var pump = require('pump');
@@ -104,15 +106,7 @@ module.exports = function(opts) {
 	});
 
 	var save = function(id, opts, cb) {
-		var service = db.get(id) || {id:id};
-
-		if (opts.start)    service.start = opts.start;
-		if (opts.build)    service.build = opts.build;
-		if (opts.docks)    service.docks = opts.docks;
-		if (opts.revision) service.revision = opts.revision;
-		if (opts.env)      service.env = opts.env;
-
-		db.put(id, service, cb);
+		db.put(id, xtend(db.get(id) || {id:id}, select(opts, ['start', 'build', 'docks', 'revision', 'env'])), cb);
 	};
 
 	var onstatuschange = function(id, status, cb) {
@@ -326,6 +320,6 @@ module.exports = function(opts) {
 	var port = opts.port || 10002;
 	server.listen(port, function() {
 		log(null, 'listening on', port);
-		if (opts.dock) require('./dock')({port:port+1, remote:'127.0.0.1:'+port, id:opts.id});
+		if (opts.dock) require('./dock')({port:port+1, remote:'127.0.0.1:'+port, id:opts.id, db:db});
 	});
 };
