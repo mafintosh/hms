@@ -23,7 +23,7 @@ var HANDSHAKE =
 	'Connection: Upgrade\r\n\r\n';
 
 var log = function(tag) {
-	tag = '['+tag+']';
+	tag = '[dock] ['+tag+']';
 	console.log.apply(null, arguments);
 };
 
@@ -71,7 +71,7 @@ module.exports = function(opts) {
 
 		if (JSON.stringify({command:stale.command, cwd:stale.cwd, env:stale.env}) === JSON.stringify(fresh)) return false;
 
-		info[id] = {version:service.version, deployed:service.deployed};
+		info[id] = {revision:service.revision, deployed:service.deployed};
 		mons.add(id, fresh);
 		return true;
 	};
@@ -225,14 +225,14 @@ module.exports = function(opts) {
 		var reconnect = once(function() {
 			if (dropped) return setTimeout(connect, 5000);
 			dropped = true;
-			log('hms', 'connection to remote dropped');
+			log('sys', 'connection to remote dropped');
 			setTimeout(connect, 2500);
 		});
 
 		req.on('error', reconnect);
 		req.on('connect', function(res, socket, data) {
 			dropped = false;
-			log('hms', 'connection to remote established');
+			log('sys', 'connection to remote established');
 			var p = protocol(socket, data);
 			p.ping();
 			p.on('close', reconnect);
@@ -254,7 +254,7 @@ module.exports = function(opts) {
 
 	var port = opts.port || 10002;
 	server.listen(port, function(addr) {
-		log('hms', origin, 'listening on', port);
+		log('sys', origin, 'listening on', port);
 
 		db.keys().forEach(function(key) {
 			var service = db.get(key);
@@ -265,7 +265,7 @@ module.exports = function(opts) {
 	});
 
 	var shutdown = function() {
-		log('hms', 'shutting down');
+		log('sys', 'shutting down');
 		mons.shutdown(function() {
 			process.exit(0);
 		});

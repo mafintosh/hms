@@ -24,7 +24,7 @@ var HANDSHAKE =
 	'Connection: Upgrade\r\n\r\n';
 
 var log = function(tag) {
-	tag = '['+tag+']';
+	tag = '[term] ['+tag+']';
 	console.log.apply(null, arguments);
 };
 
@@ -37,7 +37,7 @@ module.exports = function(opts) {
 	var ondock = function(protocol, host) {
 		protocol.on('close', function() {
 			docks.splice(docks.indexOf(protocol), 1);
-			log('hms', 'connection to dock ('+host+') dropped');
+			log('sys', 'connection to dock ('+host+') dropped');
 		});
 
 		protocol.on('stdout', function(id, origin, data) {
@@ -57,7 +57,7 @@ module.exports = function(opts) {
 		});
 
 		docks.push(protocol);
-		log('hms', 'connection to dock ('+host+') established');
+		log('sys', 'connection to dock ('+host+') established');
 
 		subs.subscriptions().forEach(function(key) {
 			protocol.subscribe(key);
@@ -106,11 +106,11 @@ module.exports = function(opts) {
 	var save = function(id, opts, cb) {
 		var service = db.get(id) || {id:id};
 
-		if (opts.start)   service.start = opts.start;
-		if (opts.build)   service.build = opts.build;
-		if (opts.docks)   service.docks = opts.docks;
-		if (opts.version) service.version = opts.version;
-		if (opts.env)     service.env = opts.env;
+		if (opts.start)    service.start = opts.start;
+		if (opts.build)    service.build = opts.build;
+		if (opts.docks)    service.docks = opts.docks;
+		if (opts.revision) service.revision = opts.revision;
+		if (opts.env)      service.env = opts.env;
 
 		db.put(id, service, cb);
 	};
@@ -248,7 +248,7 @@ module.exports = function(opts) {
 
 			service.cwd = cwd;
 			service.deployed = deployed;
-			service.version = req.query.version;
+			service.revision = req.query.revision;
 
 			db.put(id, service, function(err) {
 				if (err) return onerror(500);
@@ -325,6 +325,7 @@ module.exports = function(opts) {
 
 	var port = opts.port || 10002;
 	server.listen(port, function() {
-		log('hms', 'listening on', port);
+		log('sys', 'listening on', port);
+		if (opts.dock) require('./dock')({port:port+1, remote:'127.0.0.1:'+port, id:opts.id});
 	});
 };
