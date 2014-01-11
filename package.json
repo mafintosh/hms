@@ -18,7 +18,7 @@
     "chalk": "~0.4.0",
     "relative-date": "~1.1.1",
     "progress-stream": "~0.4.0",
-    "http-ssh-agent": "~0.2.0",
+    "http-ssh-agent": "~0.2.1",
     "pingable": "~0.2.0",
     "readtoend": "0.0.1",
     "split": "~0.2.10",
