@@ -42,8 +42,11 @@ module.exports = function(id, opts) {
 
 	var tmp = path.join(os.tmpDir(), 'hms-'+id+'.tgz');
 	var rev = typeof opts.revision === 'string' ? opts.revision : undefined;
+	var then = Date.now();
 
 	c.open(); // lets just open the conn right away to speed up things
+
+	console.log('Deploying', path.basename(process.cwd()), 'to', id+'\n');
 
 	log(ui.PROGRESS, 'Uploading', id, chalk.cyan('[>'+WS.slice(1)+'] '));
 
@@ -109,6 +112,7 @@ module.exports = function(id, opts) {
 
 			deploy.on('success', function() {
 				if (unspin) unspin();
+				console.log('\nDeployment completed ('+(Date.now()-then)+'ms)');
 			});
 
 			pump(fs.createReadStream(tmp), prog, deploy, function(err) {
