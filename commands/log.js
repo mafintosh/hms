@@ -17,4 +17,14 @@ module.exports = function(id, opts) {
 	c.on('stderr', function(id, data) {
 		process.stderr.write(data);
 	});
+
+	if (opts.events === false) return;
+
+	c.on('spawn', function(id, pid) {
+		ui.highlight('Process spawned with pid '+pid);
+	});
+
+	c.on('exit', function(id, code) {
+		ui.highlight('Process exited with code '+code);
+	});
 };
