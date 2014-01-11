@@ -24,7 +24,9 @@ module.exports = function(id, opts) {
 	var padId = padder();
 
 	var log = function(id, origin, message) {
-		console.log(chalk.yellow(padId(id))+chalk.grey(padOrigin(origin))+message);
+		id = opts.id === false ? '' : chalk.yellow(padId(id));
+		origin = opts.origin === false ? '' : chalk.grey(padOrigin(origin));
+		console.log(id+origin+message);
 	};
 
 	var get = function(id, origin) {
