@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 var tab = require('tabalot');
+var os = require('os');
 var noop = [];
 
 var ids = function(word, opts, cb) {
@@ -93,13 +94,14 @@ tab('deploy')
 	});
 
 tab('dock')
-	('--port', '-p')
+	('--id', '-i', os.hostname())
+	('--port', '-p', 10002)
 	(function(opts) {
 		require('../commands/dock')(opts);
 	});
 
 tab('terminal')
-	('--port', '-p')
+	('--port', '-p', 10002)
 	('--dock', '-d')
 	(function(opts) {
 		require('../commands/terminal')(opts);
