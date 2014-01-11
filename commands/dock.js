@@ -54,10 +54,12 @@ module.exports = function(opts) {
 	});
 
 	mons.on('spawn', function(mon, child) {
+		log(mon.id, 'spawned '+child.pid);
 		subs.publish('spawn', mon.id, origin, child.pid);
 	});
 
 	mons.on('exit', function(mon, code) {
+		log(mon.id, 'exited ('+code+')');
 		subs.publish('exit', mon.id, origin, code);
 	});
 
