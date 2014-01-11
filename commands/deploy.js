@@ -112,7 +112,7 @@ module.exports = function(id, opts) {
 
 			deploy.on('success', function() {
 				if (unspin) unspin();
-				console.log('\nDeployment completed ('+(Date.now()-then)+'ms)');
+				console.log('\nSuccessfully deployed', id, '('+(Date.now()-then)+'ms)');
 			});
 
 			pump(fs.createReadStream(tmp), prog, deploy, function(err) {
