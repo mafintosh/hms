@@ -47,6 +47,10 @@ tab('update')
 	('--docks', '-d')
 	('--env', '-e')
 	('--env-add')
+	('--no-start')
+	('--no-build')
+	('--no-docks')
+	('--no-env')
 	(function(id, opts) {
 		require('../commands/update')(id, opts);
 	});
@@ -94,6 +98,7 @@ tab('log')
 tab('deploy')
 	(ids)
 	('--revision', '-r')
+	('--force', '-f')
 	(function(id, opts) {
 		require('../commands/deploy')(id, opts);
 	});
