@@ -22,7 +22,10 @@
     "pingable": "~0.2.0",
     "readtoend": "0.0.1",
     "split": "~0.2.10",
-    "select-keys": "0.0.2"
+    "select-keys": "0.0.2",
+    "flat-file-db": "~0.1.3",
+    "prettysize": "0.0.3",
+    "minimatch": "~0.2.14"
   },
   "main": "./lib/client.js",
   "bin": {
