@@ -1,3 +1,4 @@
+var chalk = require('chalk');
 var client = require('../');
 var ui = require('../lib/ui');
 
@@ -7,7 +8,11 @@ module.exports = function(id, opts) {
 	var onlist = function(err, list) {
 		if (err) return ui.error(err);
 
-		[].concat(list).forEach(function(service) {
+		list = [].concat(list);
+
+		if (!list.length) return ui.empty();
+
+		list.forEach(function(service) {
 			var leaf = {};
 
 			if (service.start)    leaf.start = service.start;
