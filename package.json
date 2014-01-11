@@ -21,7 +21,8 @@
     "http-ssh-agent": "~0.2.0",
     "pingable": "~0.2.0",
     "readtoend": "0.0.1",
-    "split": "~0.2.10"
+    "split": "~0.2.10",
+    "select-keys": "0.0.2"
   },
   "main": "./lib/client.js",
   "bin": {
