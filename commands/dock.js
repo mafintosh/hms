@@ -10,6 +10,7 @@ var rimraf = require('rimraf');
 var once = require('once');
 var pump = require('pump');
 var select = require('select-keys');
+var shell = require('shell-quote');
 var respawns = require('respawn-group');
 var protocol = require('../lib/protocol');
 var parse = require('../lib/parse-remote');
@@ -71,7 +72,8 @@ module.exports = function(opts) {
 
 		var env = xtend(service.env);
 		var stale = mons.get(id) || {};
-		var fresh = {command:['/bin/sh', '-c', service.start, id], cwd:service.cwd, env:env};
+		var cmd = shell.parse(service.start, service.env);
+		var fresh = {command:cmd, cwd:service.cwd, env:env};
 
 		if (JSON.stringify({command:stale.command, cwd:stale.cwd, env:stale.env}) === JSON.stringify(fresh)) return false;
 
