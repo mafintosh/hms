@@ -28,7 +28,7 @@ module.exports = function(id, opts) {
 			});
 
 			ui.tree({
-				label: dock.host,
+				label: dock.id,
 				leaf: leafs
 			});
 		});
