@@ -1,30 +1,59 @@
 var client = require('../');
 var ui = require('../lib/ui');
+var split = require('split');
+var chalk = require('chalk');
 
 module.exports = function(id, opts) {
-	if (!id) return ui.error('Service name required');
-
 	var c = client(opts.remote);
 
 	c.subscribe(id, function(err) {
 		if (err) return ui.error(err);
 	});
 
-	c.on('stdout', function(id, data) {
-		process.stdout.write(data);
+	var streams = {};
+
+	var padder = function() {
+		var ws = ' ';
+		return function(msg) {
+			if (msg.length >= ws.length) ws = msg.replace(/./g, ' ')+' ';
+			return msg+ws.slice(msg.length - ws.length);
+		};
+	};
+
+	var padOrigin = padder();
+	var padId = padder();
+
+	var log = function(id, origin, message) {
+		console.log(chalk.yellow(padId(id))+chalk.grey(padOrigin(origin))+message);
+	};
+
+	var get = function(id, origin) {
+		if (streams[id+'@'+origin]) return streams[id+'@'+origin];
+
+		var s = streams[id+'@'+origin] = split();
+
+		s.on('data', function(data) {
+			log(id, origin, data);
+		});
+
+		return s;
+	};
+
+	c.on('stdout', function(id, origin, data) {
+		get(id, origin).write(data);
 	});
 
-	c.on('stderr', function(id, data) {
-		process.stderr.write(data);
+	c.on('stderr', function(id, origin, data) {
+		get(id, origin).write(data);
 	});
 
 	if (opts.events === false) return;
 
-	c.on('spawn', function(id, pid) {
-		ui.highlight('Process spawned with pid '+pid);
+	c.on('spawn', function(id, origin, pid) {
+		log(id, origin, chalk.cyan('Process spawned with pid '+pid));
 	});
 
-	c.on('exit', function(id, code) {
-		ui.highlight('Process exited with code '+code);
+	c.on('exit', function(id, origin, code) {
+		log(id, origin, chalk.cyan('Process exited with code '+code));
 	});
 };

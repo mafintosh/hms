@@ -32,7 +32,7 @@ module.exports = function(opts) {
 	var db = flat.sync('db');
 	var mons = respawns();
 	var subs = subscriptions();
-	var dockId = opts.id || os.hostname();
+	var origin = opts.id || os.hostname();
 
 	subs.on('subscribe', function(id, protocol, count) {
 		if (count > 1) return;
@@ -45,19 +45,19 @@ module.exports = function(opts) {
 	});
 
 	mons.on('stdout', function(mon, data) {
-		subs.publish('stdout', mon.id, data);
+		subs.publish('stdout', mon.id, origin, data);
 	});
 
 	mons.on('stderr', function(mon, data) {
-		subs.publish('stderr', mon.id, data);
+		subs.publish('stderr', mon.id, origin, data);
 	});
 
 	mons.on('spawn', function(mon, child) {
-		subs.publish('spawn', mon.id, child.pid);
+		subs.publish('spawn', mon.id, origin, child.pid);
 	});
 
 	mons.on('exit', function(mon, code) {
-		subs.publish('exit', mon.id, code);
+		subs.publish('exit', mon.id, origin, code);
 	});
 
 	var remote = parse(opts.remote);
@@ -139,7 +139,7 @@ module.exports = function(opts) {
 
 			var req = http.get(xtend(remote, {
 				path:'/'+id,
-				headers:{origin:dockId}
+				headers:{origin:origin}
 			}));
 
 			log(id, 'fetching build from remote');
@@ -193,11 +193,11 @@ module.exports = function(opts) {
 				return xtend(mon.toJSON(), info[mon.id]);
 			});
 
-			cb(null, [{id:dockId, list:list}]);
+			cb(null, [{id:origin, list:list}]);
 		});
 
 		protocol.on('subscribe', function(id, cb) {
-			if (!docking && !db.has(id)) return onnotfound(cb);
+			if (!docking && id !== '*' && !db.has(id)) return onnotfound(cb);
 			subs.subscribe(id, protocol);
 			cb();
 		});
@@ -219,7 +219,7 @@ module.exports = function(opts) {
 		var req = http.request(xtend(remote, {
 			method:'CONNECT',
 			path:'/dock',
-			headers:{origin:dockId}
+			headers:{origin:origin}
 		}));
 
 		var reconnect = once(function() {
@@ -254,7 +254,7 @@ module.exports = function(opts) {
 
 	var port = opts.port || 10002;
 	server.listen(port, function(addr) {
-		log('hms', dockId, 'listening on', port);
+		log('hms', origin, 'listening on', port);
 
 		db.keys().forEach(function(key) {
 			var service = db.get(key);

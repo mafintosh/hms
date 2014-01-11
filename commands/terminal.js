@@ -40,20 +40,20 @@ module.exports = function(opts) {
 			log('hms', 'connection to dock ('+host+') dropped');
 		});
 
-		protocol.on('stdout', function(id, data) {
-			subs.publish('stdout', id, data);
+		protocol.on('stdout', function(id, origin, data) {
+			subs.publish('stdout', id, origin, data);
 		});
 
-		protocol.on('stderr', function(id, data) {
-			subs.publish('stderr', id, data);
+		protocol.on('stderr', function(id, origin, data) {
+			subs.publish('stderr', id, origin, data);
 		});
 
-		protocol.on('spawn', function(id, pid) {
-			subs.publish('spawn', id, pid);
+		protocol.on('spawn', function(id, origin, pid) {
+			subs.publish('spawn', id, origin, pid);
 		});
 
-		protocol.on('exit', function(id, code) {
-			subs.publish('exit', id, code);
+		protocol.on('exit', function(id, origin, code) {
+			subs.publish('exit', id, origin, code);
 		});
 
 		docks.push(protocol);
@@ -210,7 +210,7 @@ module.exports = function(opts) {
 		};
 
 		protocol.on('subscribe', function(id, cb) {
-			if (!db.has(id)) return cb(new Error('Service not found'));
+			if (!db.has(id) && id !== '*') return cb(new Error('Service not found'));
 			subs.subscribe(id, protocol);
 			cb();
 		});
