@@ -83,6 +83,7 @@ tab('ps')
 
 tab('log')
 	(ids)
+	('--no-events')
 	(function(id, opts) {
 		require('../commands/log')(id, opts);
 	});
