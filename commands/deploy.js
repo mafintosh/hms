@@ -11,13 +11,15 @@ var ui = require('../lib/ui');
 module.exports = function(id, opts) {
 	if (!id) return ui.error('Service name required');
 
-	var tmp = path.join(os.tmpDir(), 'hms-'+id+'.tgz');
 	var c = client(opts.remote);
+
+	var tmp = path.join(os.tmpDir(), 'hms-'+id+'.tgz');
+	var rev = typeof opts.revision === 'string' ? opts.revision : undefined;
 
 	c.open(); // lets just open the conn right away to speed up things
 
 	pump(tar.pack('.'), zlib.createGzip(), fs.createWriteStream(tmp), function(err) {
-		var deploy = c.deploy(id);
+		var deploy = c.deploy(id, {revision:rev});
 
 		var prog = progress({
 			time: 250,

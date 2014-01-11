@@ -20,7 +20,8 @@
     "progress-stream": "~0.4.0",
     "http-ssh-agent": "~0.2.0",
     "pingable": "~0.2.0",
-    "readtoend": "0.0.1"
+    "readtoend": "0.0.1",
+    "split": "~0.2.10"
   },
   "main": "./lib/client.js",
   "bin": {
