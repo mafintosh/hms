@@ -10,10 +10,11 @@ module.exports = function(id, opts) {
 		[].concat(list).forEach(function(service) {
 			var leaf = {};
 
-			if (service.start) leaf.start = service.start;
-			if (service.build) leaf.build = service.build;
-			if (service.docks) leaf.docks = service.docks;
-			if (service.env)   leaf.env = service.env;
+			if (service.start)    leaf.start = service.start;
+			if (service.build)    leaf.build = service.build;
+			if (service.revision) leaf.revision = service.revision;
+			if (service.docks)    leaf.docks = service.docks;
+			if (service.env)      leaf.env = service.env;
 
 			ui.tree({
 				label: service.id,

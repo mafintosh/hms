@@ -77,6 +77,7 @@ tab('stop')
 
 tab('ps')
 	(ids)
+	('--verbose', '-v')
 	(function(id, opts) {
 		require('../commands/ps')(id, opts);
 	});
@@ -92,6 +93,7 @@ tab('log')
 
 tab('deploy')
 	(ids)
+	('--revision', '-r')
 	(function(id, opts) {
 		require('../commands/deploy')(id, opts);
 	});

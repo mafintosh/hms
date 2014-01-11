@@ -19,10 +19,16 @@ module.exports = function(id, opts) {
 				leaf.id = proc.id;
 				leaf.status = proc.status;
 				leaf.cwd = proc.cwd;
+
+				if (proc.revision) leaf.revision = proc.revision;
 				if (proc.pid)      leaf.pid = proc.pid;
-				if (proc.version)  leaf.version = proc.version;
 				if (proc.started)  leaf.started = relativeDate(proc.started);
 				if (proc.deployed) leaf.deployed = relativeDate(proc.deployed);
+
+				if (opts.verbose) {
+					if (proc.command) leaf.command = proc.command;
+					if (proc.env)     leaf.env = proc.env;
+				}
 
 				return leaf;
 			});
