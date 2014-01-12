@@ -264,7 +264,10 @@ module.exports = function(opts) {
 			if (!service) return onerror(404, 'Service not found');
 			if (!service.build) return ondone(204);
 
-			var build = proc.spawn('/bin/sh', ['-c', service.build, id], {cwd:cwd, env:service.env});
+			var build = proc.spawn('/bin/sh', ['-c', service.build, id], {
+				cwd:cwd,
+				env:xtend(process.env, service.env)
+			});
 
 			build.stdout.pipe(res, {end:false});
 			build.stderr.pipe(res, {end:false});
