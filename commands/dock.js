@@ -124,7 +124,8 @@ module.exports = function(opts) {
 			cb(null, db.get(id));
 		});
 
-		protocol.on('distribute', function(id, service, cb) { // TODO: reject build if we dont want it (aka aws naming scheme)
+		protocol.on('distribute', function(id, service, cb) {
+			if (!docking) return cb(new Error('Cannot distribute on a dock'));
 			if (!service) return cb(new Error('Service must be passed'));
 
 			var cwd = path.join('builds', id+'@'+service.deployed);
