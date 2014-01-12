@@ -46,6 +46,10 @@ module.exports = function(opts) {
 		log(id, 'unforwarding event and output');
 	});
 
+	mons.on('finalize', function(mon) {
+		rimraf(mon.cwd, noop);
+	});
+
 	mons.on('stdout', function(mon, data) {
 		subs.publish('stdout', mon.id, origin, data);
 	});

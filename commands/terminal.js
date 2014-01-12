@@ -66,6 +66,10 @@ module.exports = function(opts) {
 		});
 	};
 
+	var clean = opts.dock ? noop : function(dir) {
+		rimraf(dir, noop);
+	};
+
 	var forEach = function(fn, cb) {
 		cb = once(cb || noop);
 
@@ -239,6 +243,7 @@ module.exports = function(opts) {
 
 		var ondone = function(status) {
 			var service = db.get(id);
+			var old = service.cwd;
 
 			service.cwd = cwd;
 			service.deployed = deployed;
@@ -247,6 +252,7 @@ module.exports = function(opts) {
 			db.put(id, service, function(err) {
 				if (err) return onerror(500);
 				log(id, 'build succeded');
+				if (old) clean(old);
 				delete cache[id];
 				res.statusCode = status;
 				res.addTrailers({'X-Status': 200});
