@@ -13,7 +13,12 @@ module.exports = function(id, opts) {
 
 	var done = function(err) {
 		if (err) return unspin(err);
-		c.update(id, opts, unspin);
+		c.update(id, opts, function(err) {
+			unspin(err);
+			if (!opts.restart) return;
+			unspin = ui.spin('Restarting', id);
+			c.restart(id, unspin);
+		});
 	};
 
 	var envAdd = opts['env-add'] && parse(opts['env-add']);
