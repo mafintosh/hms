@@ -106,7 +106,6 @@ tab('deploy')
 tab('dock')
 	('--id', '-i', os.hostname())
 	('--port', '-p', 10002)
-	('--user', '-u')
 	(function(opts) {
 		require('../commands/dock')(opts);
 	});
@@ -114,7 +113,6 @@ tab('dock')
 tab('terminal')
 	('--port', '-p', 10002)
 	('--dock', '-d')
-	('--user', '-u')
 	(function(opts) {
 		require('../commands/terminal')(opts);
 	});

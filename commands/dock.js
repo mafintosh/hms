@@ -30,8 +30,6 @@ var log = function(tag) {
 };
 
 module.exports = function(opts) {
-	if (opts.user) process.setuid(opts.user);
-
 	var server = root();
 	var db = typeof opts.db == 'object' && opts.db || flat.sync('db');
 	var mons = respawns();

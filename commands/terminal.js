@@ -31,8 +31,6 @@ var log = function(tag) {
 };
 
 module.exports = function(opts) {
-	if (opts.user) process.setuid(opts.user);
-
 	var server = root();
 	var db = flat.sync('db');
 	var subs = subscriptions();
