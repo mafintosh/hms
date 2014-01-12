@@ -51,6 +51,7 @@ tab('update')
 	('--no-build')
 	('--no-docks')
 	('--no-env')
+	('--restart')
 	(function(id, opts) {
 		require('../commands/update')(id, opts);
 	});
@@ -101,6 +102,13 @@ tab('deploy')
 	('--force', '-f')
 	(function(id, opts) {
 		require('../commands/deploy')(id, opts);
+	});
+
+tab('distribute')
+	(ids)
+	('--restart')
+	(function(id, opts) {
+		require('../commands/distribute')(id, opts);
 	});
 
 tab('dock')
