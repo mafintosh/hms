@@ -81,7 +81,7 @@ tab('stop')
 
 tab('ps')
 	(ids)
-	('--verbose', '-v')
+	('--env', '-e')
 	(function(id, opts) {
 		require('../commands/ps')(id, opts);
 	});

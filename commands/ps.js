@@ -13,29 +13,30 @@ module.exports = function(id, opts) {
 		if (err) return ui.error(err);
 
 		docks.forEach(function(dock) {
-			var leafs = dock.list.filter(filter).map(function(proc) {
+			var nodes = dock.list.filter(filter).map(function(proc) {
+				var node = {};
 				var leaf = {};
 
-				leaf.id = proc.id;
+				node.label = proc.id;
+				node.leaf = leaf;
+
 				leaf.status = proc.status;
 				leaf.cwd = proc.cwd;
 
+				if (proc.command)  leaf.command = proc.command.join(' ');
 				if (proc.revision) leaf.revision = proc.revision;
 				if (proc.pid)      leaf.pid = proc.pid;
 				if (proc.started)  leaf.started = relativeDate(proc.started);
 				if (proc.deployed) leaf.deployed = relativeDate(proc.deployed);
 
-				if (opts.verbose) {
-					if (proc.command) leaf.command = proc.command;
-					if (proc.env)     leaf.env = proc.env;
-				}
+				if (opts.env && proc.env) leaf.env = proc.env;
 
-				return leaf;
+				return node;
 			});
 
 			ui.tree({
 				label: dock.id,
-				leaf: leafs
+				nodes: nodes
 			});
 		});
 	});
