@@ -47,7 +47,8 @@ module.exports = function(opts) {
 	});
 
 	mons.on('finalize', function(mon) {
-		rimraf(mon.cwd, noop);
+		var cwd = db.has(mon.id) && db.get(mon.id).cwd;
+		if (mon.cwd !== cwd) rimraf(mon.cwd, noop);
 	});
 
 	mons.on('stdout', function(mon, data) {
