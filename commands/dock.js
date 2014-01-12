@@ -257,6 +257,10 @@ module.exports = function(opts) {
 		res.end('hms-dock '+pkg.version+'\n');
 	});
 
+	server.error(function(req, res) {
+		res.end('Cannot deploy to a dock');
+	});
+
 	server.on('connect', function(req, socket, data) {
 		socket.write(HANDSHAKE);
 		onprotocol(protocol(socket, data), false);
