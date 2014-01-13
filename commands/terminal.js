@@ -149,7 +149,12 @@ module.exports = function(opts) {
 
 		protocol.on('remove', function(id, cb) {
 			log(id, 'removing service');
-			db.del(id, cb);
+			forEach(function(dock, next) {
+				dock.remove(id, next);
+			}, function(err) {
+				if (err) return cb(err);
+				db.del(id, cb);
+			});
 		});
 
 		protocol.on('get', function(id, cb) {

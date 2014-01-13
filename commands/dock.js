@@ -139,7 +139,7 @@ module.exports = function(opts) {
 
 			var upsert = function() {
 				service.cwd = cwd;
-				db.put(id, service, cb);
+				db.put(id, service, done);
 			};
 
 			var onerror = function(err) {
