@@ -11,6 +11,8 @@ Available commands are:
   stop         stop service processes
   restart      restart service processes
   log          tail service logs
+
+Use the following commands to setup a remote
   dock         start a service dock
   terminal     start a service terminal
 
