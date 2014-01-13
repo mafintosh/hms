@@ -22,6 +22,7 @@ var help = function() {
 };
 
 tab('*')
+	('--key', '-i', '-k', '@file')
 	('--remote', '-r', '@host');
 
 tab('list')

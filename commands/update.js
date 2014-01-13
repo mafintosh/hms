@@ -8,7 +8,7 @@ module.exports = function(id, opts) {
 
 	if (opts.env) opts.env = parse(opts.env);
 
-	var c = client(opts.remote);
+	var c = client(opts);
 	var unspin = ui.spin('Updating', id);
 
 	var done = function(err) {

@@ -3,7 +3,7 @@ var client = require('../');
 var ui = require('../lib/ui');
 
 module.exports = function(id, opts) {
-	var c = client(opts.remote);
+	var c = client(opts);
 
 	var filter = function(proc) {
 		return !id || proc.id === id;

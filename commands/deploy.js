@@ -63,7 +63,7 @@ module.exports = function(id, opts) {
 	if (repo && repo !== process.cwd() && !opts.force) return ui.error('You are in a git repo but not at the root. Use --force to ignore');
 
 	var ignore = opts.ignore === false ? noop : compileIgnore(readSync('.hmsignore') || readSync('.gitignore') || '');
-	var c = client(opts.remote);
+	var c = client(opts);
 
 	var tmp = path.join(os.tmpDir(), 'hms-'+id+'.tgz');
 	var rev = typeof opts.revision === 'string' ? opts.revision : undefined;

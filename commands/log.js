@@ -4,7 +4,7 @@ var split = require('split');
 var chalk = require('chalk');
 
 module.exports = function(id, opts) {
-	var c = client(opts.remote);
+	var c = client(opts);
 
 	c.subscribe(id, function(err) {
 		if (err) return ui.error(err);
