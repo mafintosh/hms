@@ -104,11 +104,11 @@ tab('deploy')
 		require('../commands/deploy')(id, opts);
 	});
 
-tab('distribute')
+tab('sync')
 	(ids)
 	('--restart')
 	(function(id, opts) {
-		require('../commands/distribute')(id, opts);
+		require('../commands/sync')(id, opts);
 	});
 
 tab('dock')

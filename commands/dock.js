@@ -125,15 +125,15 @@ module.exports = function(opts) {
 			cb(null, db.get(id));
 		});
 
-		protocol.on('distribute', function(id, service, cb) {
-			if (!docking) return cb(new Error('Cannot distribute on a dock'));
+		protocol.on('sync', function(id, service, cb) {
+			if (!docking) return cb(new Error('Cannot sync from a dock'));
 			if (!service) return cb(new Error('Service must be passed'));
 
 			var cwd = path.join('builds', id+'@'+service.deployed);
 
 			var done = once(function(err) {
 				if (err) return onerror(err);
-				log(id, 'distribute succeded');
+				log(id, 'sync succeded');
 				cb();
 			});
 
@@ -143,7 +143,7 @@ module.exports = function(opts) {
 			};
 
 			var onerror = function(err) {
-				log(id, 'distribute failed ('+err.message+')');
+				log(id, 'sync failed ('+err.message+')');
 				rimraf(cwd, function() {
 					cb(err);
 				});
@@ -274,7 +274,8 @@ module.exports = function(opts) {
 
 		db.keys().forEach(function(key) {
 			var service = db.get(key);
-			if (!service.stopped) onstatuschange(key, 'start', noop);
+			if (service.stopped) onmon(key, service);
+			else onstatuschange(key, 'start', noop);
 		});
 
 		connect();

@@ -170,14 +170,14 @@ module.exports = function(opts) {
 			cb(null, list);
 		});
 
-		protocol.on('distribute', function(id, service, cb) {
+		protocol.on('sync', function(id, service, cb) {
 			if (!service) service = db.get(id);
 			if (!service) return cb(new Error('Service not found'));
-			log(id, 'distributing build to docks');
+			log(id, 'syncing build to docks');
 			save(id, service, function(err) {
 				if (err) return cb(err);
 				forEach(function(dock, next) {
-					dock.distribute(id, service, next);
+					dock.sync(id, service, next);
 				}, cb);
 			});
 		});

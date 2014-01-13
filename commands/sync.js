@@ -6,8 +6,8 @@ module.exports = function(id, opts) {
 	if (!id) return ui.error('Service name required');
 
 	var c = client(opts.remote);
-	var unspin = ui.spin('Distributing', id);
-	c.distribute(id, function(err) {
+	var unspin = ui.spin('Syncing', id);
+	c.sync(id, function(err) {
 		unspin(err);
 		if (!opts.restart) return;
 		unspin = ui.spin('Restarting', id);

@@ -125,9 +125,9 @@ module.exports = function(id, opts) {
 				stream.pipe(nl);
 			});
 
-			deploy.on('distributing', function() {
+			deploy.on('syncing', function() {
 				if (unspin) unspin();
-				unspin = ui.spin('Distributing', id);
+				unspin = ui.spin('Syncing', id);
 			});
 
 			deploy.on('restarting', function() {
