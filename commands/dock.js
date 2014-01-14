@@ -69,7 +69,7 @@ module.exports = function(opts) {
 		subs.publish('exit', mon.id, origin, code);
 	});
 
-	var remote = parse(opts);
+	var remote = parse(xtend(opts));
 	var info = {};
 
 	var onmon = function(id, service) {
