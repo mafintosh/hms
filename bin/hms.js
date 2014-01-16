@@ -23,6 +23,7 @@ var help = function() {
 
 tab('*')
 	('--key', '-i', '-k', '@file')
+	('--fingerprint', '-f')
 	('--remote', '-r', '@host');
 
 tab('list')
@@ -110,6 +111,12 @@ tab('sync')
 	('--restart')
 	(function(id, opts) {
 		require('../commands/sync')(id, opts);
+	});
+
+tab('verify')
+	('--expect', '-e')
+	(function(opts) {
+		require('../commands/verify')(opts);
 	});
 
 tab('dock')
