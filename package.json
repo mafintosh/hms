@@ -28,7 +28,6 @@
     "minimatch": "~0.2.14",
     "respawn-group": "~0.4.2",
     "shell-quote": "~1.4.1",
-    "ini": "~1.1.0",
     "read": "~1.0.5"
   },
   "main": "./lib/client.js",
