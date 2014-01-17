@@ -1,0 +1,17 @@
+var client = require('../');
+var ui = require('../lib/ui');
+var parse = require('../lib/parse-env');
+var fs = require('fs');
+
+module.exports = function(id, opts) {
+	if (!id) return ui.error('Service name required');
+
+	var c = client(opts);
+	var tar = c.tarball(id);
+
+	tar.on('error', function(err) {
+		ui.error(err);
+	});
+
+	tar.pipe(opts.out ? fs.createWriteStream(opts.out) : process.stdout);
+};

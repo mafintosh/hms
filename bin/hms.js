@@ -119,6 +119,13 @@ tab('verify')
 		require('../commands/verify')(opts);
 	});
 
+tab('tarball')
+	(ids)
+	('--out', '-o', '@file')
+	(function(id, opts) {
+		require('../commands/tarball')(id, opts);
+	});
+
 tab('dock')
 	('--id', '-i', os.hostname())
 	('--port', '-p', 10002)
