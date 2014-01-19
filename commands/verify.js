@@ -1,11 +1,11 @@
 var client = require('../');
 var ui = require('../lib/ui');
+var config = require('../lib/config');
 var chalk = require('chalk');
 var read = require('read');
 var fs = require('fs');
 var path = require('path');
 var crypto = require('crypto');
-var ini = require('ini');
 
 var HOME = process.env.HOME || process.env.USERPROFILE;
 var KNOWN_HOSTS = path.join(HOME, '.ssh', 'known_hosts');
@@ -29,14 +29,11 @@ module.exports = function(opts) {
 	var c = client(opts);
 
 	var save = function(hash, cb) {
-		var settings = {};
-		var key = 'remote '+r;
-
-		settings[key] = settings[key] || {};
-		settings[key].fingerprint = hash;
-
-		console.log(ini.encode(settings));
-
+		var conf = config.read();
+		if (!conf) conf = {};
+		if (!conf.fingerprints) conf.fingerprints = {};
+		conf.fingerprints[r] = hash;
+		config.write(conf);
 		cb();
 	};
 
