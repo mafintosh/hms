@@ -55,6 +55,22 @@ List processes running on all docks. Omit the service name to list all processes
 
 Tail the log of a service. Omit the service name to tail all services.
 
+## Remote services
+
+Run the following commands on your remote server that you want to deploy to
+
+#### `hms terminal`
+
+Starts a "build-and-distribute" hub that you can deploy to. After you deploy to a terminal it will run the build script and distribute the build to the docks.
+
+* `--dock,-d` to also start a dock (this allows the terminal to run services as well)
+
+#### `hms dock`
+
+Starts a dock that can run and manage services.
+
+* `--remote,-r` to set the remote terminal to connect to. defaults to localhost
+
 ## License
 
 MIT
