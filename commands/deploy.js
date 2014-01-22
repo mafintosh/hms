@@ -1,4 +1,5 @@
 var log = require('single-line-log');
+var unansi = require('ansi-stripper');
 var split = require('split');
 var fs = require('fs');
 var zlib = require('zlib');
@@ -108,11 +109,13 @@ module.exports = function(id, opts) {
 				var wasEmpty = false;
 
 				nl.on('data', function(data) {
-					if (first && !data) return;
+					var isEmpty = !unansi(data).trim();
+
+					if (first && isEmpty) return;
 					if (first) console.log();
 					first = false;
 
-					if (!data && !wasEmpty) return wasEmpty = true;
+					if (isEmpty && !wasEmpty) return wasEmpty = true;
 
 					wasEmpty = false;
 					ui.indent(data);
