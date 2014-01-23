@@ -74,8 +74,6 @@ module.exports = function(id, opts) {
 
 	console.log('Deploying', path.basename(process.cwd()), 'to', id+'\n');
 
-	log(ui.PROGRESS, 'Uploading', id, chalk.cyan('[>'+WS.slice(1)+'] '));
-
 	var uploading = function(pct, transferred, speed) {
 		var arrow = Array(Math.floor(WS.length * pct/100)).join('=')+'>';
 		var bar = '['+arrow+WS.slice(arrow.length)+']';
@@ -87,77 +85,93 @@ module.exports = function(id, opts) {
 		log(ui.ERROR, 'Uploading', id, '('+err.message+') ');
 	};
 
-	var ready = function() {
+	var onopen = function() {
+		var unspin = ui.spin('Connecting to remote');
+		c.open(function(err) {
+			if (err) return unspin(err);
+			unspin();
+			onupload();
+		});
+	};
+
+	var ontar = function() {
+		var unspin = ui.spin('Creating tarball');
 		pump(tar.pack('.', {ignore:ignore}), zlib.createGzip(), fs.createWriteStream(tmp), function(err) {
+			if (err) return unspin(err);
+			unspin();
+			onopen();
+		});
+	};
+
+	var onupload = function() {
+		log(ui.PROGRESS, 'Uploading', id, chalk.cyan('[>'+WS.slice(1)+'] '));
+
+		var deploy = c.deploy(id, {revision:rev});
+		var unspin;
+
+		var prog = progress({
+			time: 250,
+			length: fs.statSync(tmp).size
+		});
+
+		prog.on('progress', function(data) {
+			uploading(data.percentage, data.transferred, data.speed);
+		});
+
+		deploy.on('building', function(stream) {
+			var nl = split();
+			var first = true;
+			var wasEmpty = false;
+
+			nl.on('data', function(data) {
+				var isEmpty = !unansi(data).trim();
+
+				if (first && isEmpty) return;
+				if (first) console.log();
+				first = false;
+
+				if (isEmpty && !wasEmpty) return wasEmpty = true;
+
+				wasEmpty = false;
+				ui.indent(data);
+			});
+
+			nl.on('end', function() {
+				if (!first) console.log();
+			});
+
+			stream.pipe(nl);
+		});
+
+		deploy.on('syncing', function() {
+			if (unspin) unspin();
+			unspin = ui.spin('Syncing', id);
+		});
+
+		deploy.on('restarting', function() {
+			if (unspin) unspin();
+			unspin = ui.spin('Restarting', id);
+		});
+
+		deploy.on('success', function() {
+			if (unspin) unspin();
+			console.log('\nSuccessfully deployed', id, '('+(Date.now()-then)+'ms)');
+		});
+
+		pump(fs.createReadStream(tmp), prog, deploy, function(err) {
 			if (err) return onuploaderror(err);
 
-			var deploy = c.deploy(id, {revision:rev});
-			var unspin;
-
-			var prog = progress({
-				time: 250,
-				length: fs.statSync(tmp).size
-			});
-
-			prog.on('progress', function(data) {
-				uploading(data.percentage, data.transferred, data.speed);
-			});
-
-			deploy.on('building', function(stream) {
-				var nl = split();
-				var first = true;
-				var wasEmpty = false;
-
-				nl.on('data', function(data) {
-					var isEmpty = !unansi(data).trim();
-
-					if (first && isEmpty) return;
-					if (first) console.log();
-					first = false;
-
-					if (isEmpty && !wasEmpty) return wasEmpty = true;
-
-					wasEmpty = false;
-					ui.indent(data);
-				});
-
-				nl.on('end', function() {
-					if (!first) console.log();
-				});
-
-				stream.pipe(nl);
-			});
-
-			deploy.on('syncing', function() {
-				if (unspin) unspin();
-				unspin = ui.spin('Syncing', id);
-			});
-
-			deploy.on('restarting', function() {
-				if (unspin) unspin();
-				unspin = ui.spin('Restarting', id);
-			});
-
-			deploy.on('success', function() {
-				if (unspin) unspin();
-				console.log('\nSuccessfully deployed', id, '('+(Date.now()-then)+'ms)');
-			});
-
-			pump(fs.createReadStream(tmp), prog, deploy, function(err) {
-				if (err) return onuploaderror(err);
-
-				deploy.on('error', function(err) {
-					if (unspin) return unspin(err);
-					ui.error(err);
-				});
+			deploy.on('error', function(err) {
+				if (unspin) return unspin(err);
+				ui.error(err);
 			});
 		});
 	};
 
-	if (rev || !repo) return ready();
+	if (rev || !repo) return ontar();
 
 	gitDescribe(function(desc) {
 		rev = desc;
-		ready();
+		ontar();
 	});
 };
