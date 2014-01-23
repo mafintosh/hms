@@ -88,7 +88,6 @@ module.exports = function(opts) {
 	};
 
 	var onstatuschange = function(id, status, cb) {
-		if (!db.has(id)) return onnotfound(cb);
 		onmon(id, db.get(id));
 
 		var ondone = function() {
@@ -189,14 +188,17 @@ module.exports = function(opts) {
 		});
 
 		protocol.on('restart', function(id, cb) {
+			if (!db.has(id)) return onnotfound(cb);
 			onstatuschange(id, 'restart', cb);
 		});
 
 		protocol.on('start', function(id, cb) {
+			if (!db.has(id)) return onnotfound(cb);
 			onstatuschange(id, 'start', cb);
 		});
 
 		protocol.on('stop', function(id, cb) {
+			if (!db.has(id)) return onnotfound(cb);
 			onstatuschange(id, 'stop', cb);
 		});
 
