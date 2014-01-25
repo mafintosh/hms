@@ -1,7 +1,7 @@
 var xtend = require('xtend');
 var client = require('../');
 var ui = require('../lib/ui');
-var editable = require('../lib/editable');
+var updateable = require('../lib/updateable');
 
 var stringify = function(map) {
 	return Object.keys(map || {}).reduce(function(str, key) {
@@ -9,8 +9,21 @@ var stringify = function(map) {
 	}, '');
 };
 
+var undef = function() {
+	return Array.prototype.every.call(arguments, function(arg) {
+		return arg === undefined;
+	});
+};
+
+var help = 'You need to specify one (or more) of the following\n'+
+	'--start [start-script]\n'+
+	'--build [build-script]\n'+
+	'--docks [docks-to-deploy-to]\n'+
+	'--env   [NAME=var,NAME2=var2]';
+
 module.exports = function(id, opts) {
 	if (!id) return ui.error('Service name required');
+	if (undef(opts.env, opts.docks, opts.start, opts.start)) return ui.error(help);
 
 	var c = client(opts);
 	var unspin = ui.spin('Updating', id);
@@ -25,10 +38,10 @@ module.exports = function(id, opts) {
 		});
 	};
 
-	if (!opts.env && !opts.tags && !opts.start && !opts.build) return done();
+	if (!opts.env && !opts.docks && !opts.start && !opts.build) return done();
 
 	c.get(id, function(err, service) {
 		if (err) return done(err);
-		editable(id, service, opts, done);
+		updateable(id, service, opts, done);
 	});
 };
