@@ -29,15 +29,21 @@ var help = function() {
 };
 
 var defaults = function(opts) {
+	var ui = require('../lib/ui');
 	var conf = config.read();
-	conf.fingerprint = conf.fingerprints ? conf.fingerprints[opts.remote] : null;
-	return xtend(conf, opts);
+	var r = opts.remote;
+	conf.fingerprint = conf.fingerprints ? conf.fingerprints[r] : null;
+	opts = xtend(conf, opts);
+	if (opts.force) return opts;
+	if (r && r.indexOf('@') > -1 && !opts.fingerprint) return ui.error('Host is not verified. Run the verify command');
+	return opts;
 };
 
 tab('*')
 	('--key', '-i', '-k', '@file')
 	('--passphrase')
-	('--fingerprint', '-f')
+	('--fingerprint')
+	('--force', '-f')
 	('--remote', '-r', '@host');
 
 tab('list')
@@ -117,7 +123,6 @@ tab('log')
 tab('deploy')
 	(ids)
 	('--revision')
-	('--force', '-f')
 	(function(id, opts) {
 		require('../commands/deploy')(id, defaults(opts));
 	});
