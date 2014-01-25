@@ -2,6 +2,7 @@ Usage: hms [command] [options?]
 
 Available commands are:
   completion   setup tab completion
+  verify       verify the remote
   add          add a new service
   update       update an existing service
   remove       remove and stop a service
