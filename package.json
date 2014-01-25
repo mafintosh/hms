@@ -29,7 +29,8 @@
     "respawn-group": "~0.4.2",
     "shell-quote": "~1.4.1",
     "read": "~1.0.5",
-    "ansi-stripper": "0.0.1"
+    "ansi-stripper": "0.0.1",
+    "string-editor": "~0.1.0"
   },
   "main": "./lib/client.js",
   "bin": {
