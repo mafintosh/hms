@@ -27,10 +27,8 @@ module.exports = function(opts) {
 
 	var r = opts.remote;
 	var c = client(opts);
-	var saved = false;
 
 	var save = function(hash, cb) {
-		saved = true;
 		var conf = config.read();
 		if (!conf) conf = {};
 		if (!conf.fingerprints) conf.fingerprints = {};
@@ -38,6 +36,7 @@ module.exports = function(opts) {
 		if (opts.passphrase) conf.passphrase = opts.passphrase;
 		conf.fingerprints[r] = hash;
 		config.write(conf);
+		console.log('Updated ~/.hms.json with host fingerprint');
 		cb();
 	};
 
@@ -69,7 +68,6 @@ module.exports = function(opts) {
 
 	c.list(function(err) {
 		if (err) return ui.error(err);
-		if (saved) console.log('Updated ~/.hms.json with host fingerprint');
-		else console.log('No verification needed')
+		console.log('Host was verified');
 	});
 };
