@@ -24,6 +24,7 @@ Add a new service.
 
 * `--start,-s` to specify a `start` script. Ie. `node .` to start a node service
 * `--build,-b` to specify a `build` script. Ie. `npm install .` to install node modules
+* `--docks,-d` to specify the docks to deploy to. If set to a number it will be converter to a set of docks.
 * `--env,-e` to set env varibles. Format is `ENV_VAR=value;ENV_VAR2=value2
 
 #### `hms update [service-name]`
