@@ -44,7 +44,7 @@ tab('add')
 	(ids)
 	('--start', '-s')
 	('--build', '-b')
-	('--docks', '-d')
+	('--tags', '-t')
 	('--env', '-e')
 	(function(id, opts) {
 		require('../commands/add')(id, defaults(opts));
@@ -54,14 +54,13 @@ tab('update')
 	(ids)
 	('--start', '-s')
 	('--build', '-b')
-	('--docks', '-d')
+	('--tags', '-t')
 	('--env', '-e')
-	('--env-add')
+	('--restart')
 	('--no-start')
 	('--no-build')
-	('--no-docks')
+	('--no-tags')
 	('--no-env')
-	('--restart')
 	(function(id, opts) {
 		require('../commands/update')(id, defaults(opts));
 	});

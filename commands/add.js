@@ -1,6 +1,6 @@
 var client = require('../');
 var ui = require('../lib/ui');
-var parse = require('../lib/parse-env');
+var editable = require('../lib/editable');
 
 module.exports = function(id, opts) {
 	if (!id) return ui.error('Service name required');
@@ -9,5 +9,9 @@ module.exports = function(id, opts) {
 
 	var c = client(opts);
 	var unspin = ui.spin('Adding', id);
-	c.add(id, opts, unspin);
+
+	editable(id, {}, opts, function(err) {
+		if (err) return unspin(err);
+		c.add(id, opts, unspin);
+	});
 };

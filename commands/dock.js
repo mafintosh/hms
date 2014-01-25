@@ -184,7 +184,7 @@ module.exports = function(opts) {
 			if (!docking) return cb(new Error('Cannot update on a dock'));
 			if (!db.has(id)) return onnotfound(cb);
 			log(id, 'updating process');
-			db.put(id, xtend(db.get(id), select(opts, ['start', 'build', 'env', 'docks'])), cb);
+			db.put(id, xtend(db.get(id), select(opts, ['start', 'build', 'env', 'tags'])), cb);
 		});
 
 		protocol.on('restart', function(id, cb) {
@@ -292,4 +292,8 @@ module.exports = function(opts) {
 
 	process.on('SIGTERM', shutdown);
 	process.on('SIGINT', shutdown);
+	process.on('error', function(err) {
+		process.stderr.write(err.stack);
+		shutdown();
+	});
 };

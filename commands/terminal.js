@@ -110,14 +110,14 @@ module.exports = function(opts) {
 	});
 
 	var save = function(id, opts, cb) {
-		db.put(id, xtend(db.get(id) || {id:id}, select(opts, ['start', 'build', 'docks', 'revision', 'env'])), cb);
+		db.put(id, xtend(db.get(id) || {id:id}, select(opts, ['start', 'build', 'tags', 'revision', 'env'])), cb);
 	};
 
 	var onstatuschange = function(id, status, cb) {
 		if (!db.has(id)) return cb(new Error('Service not found'));
 
 		var service = db.get(id);
-		var upd = {start:service.start, build:service.build, env:service.env, docks:service.docks};
+		var upd = {start:service.start, build:service.build, env:service.env, tags:service.tags};
 
 		service.stopped = status === 'stop';
 		db.put(id, service, function(err) {

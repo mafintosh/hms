@@ -1,12 +1,16 @@
 var xtend = require('xtend');
 var client = require('../');
 var ui = require('../lib/ui');
-var parse = require('../lib/parse-env');
+var editable = require('../lib/editable');
+
+var stringify = function(map) {
+	return Object.keys(map || {}).reduce(function(str, key) {
+		return str + key+'='+map[key]+'\n';
+	}, '');
+};
 
 module.exports = function(id, opts) {
 	if (!id) return ui.error('Service name required');
-
-	if (opts.env) opts.env = parse(opts.env);
 
 	var c = client(opts);
 	var unspin = ui.spin('Updating', id);
@@ -21,12 +25,10 @@ module.exports = function(id, opts) {
 		});
 	};
 
-	var envAdd = opts['env-add'] && parse(opts['env-add']);
-	if (!envAdd) return done();
+	if (!opts.env && !opts.tags && !opts.start && !opts.build) return done();
 
 	c.get(id, function(err, service) {
 		if (err) return done(err);
-		opts.env = xtend(service.env, envAdd);
-		done();
+		editable(id, service, opts, done);
 	});
 };
