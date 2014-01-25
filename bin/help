@@ -7,6 +7,7 @@ Available commands are:
   update       update an existing service
   remove       remove and stop a service
   deploy       deploy cwd to your service
+  tarball      fetch the service as a tgz file
   list         lists available services
   start        start service processes
   stop         stop service processes
