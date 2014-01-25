@@ -30,13 +30,21 @@ var log = function(tag) {
 	console.log.apply(null, arguments);
 };
 
+var shuffle = function(list) {
+	return list.sort(function() {
+		return Math.random() < 0.5;
+	});
+};
+
 module.exports = function(opts) {
 	var server = root();
-	var db = flat.sync('db');
+	var db = flat.sync(opts.db || 'terminal.db');
 	var subs = subscriptions();
 	var docks = [];
 
 	var ondock = function(protocol, host) {
+		protocol.id = host;
+
 		protocol.on('close', function() {
 			docks.splice(docks.indexOf(protocol), 1);
 			log(null, 'connection to dock ('+host+') dropped');
@@ -70,11 +78,23 @@ module.exports = function(opts) {
 		rimraf(dir, noop);
 	};
 
-	var forEach = function(fn, cb) {
+	var parseDocks = function(d) {
+		if (Array.isArray(d)) return d;
+		if (typeof d === 'string') return [d];
+		if (typeof d !== 'number') return null;
+
+		var ids = docks.map(function(dock) {
+			return dock.id;
+		});
+
+		return shuffle(ids).slice(0, d);
+	};
+
+	var forEach = function(list, fn, cb) {
 		cb = once(cb || noop);
 
 		var result = [];
-		var missing = docks.length;
+		var missing = list.length;
 		var onresponse = function(err, val) {
 			if (err) return cb(err);
 
@@ -88,7 +108,7 @@ module.exports = function(opts) {
 		};
 
 		if (!missing) return cb(null, result);
-		docks.forEach(function(dock) {
+		list.forEach(function(dock) {
 			fn(dock, onresponse);
 		});
 	};
@@ -96,7 +116,7 @@ module.exports = function(opts) {
 	subs.on('subscribe', function(id, protocol, count) {
 		if (count > 1) return;
 		log(id, 'subscribing to service events and logs');
-		forEach(function(dock, next) {
+		forEach(docks, function(dock, next) {
 			dock.subscribe(id, next);
 		});
 	});
@@ -104,27 +124,28 @@ module.exports = function(opts) {
 	subs.on('unsubscribe', function(id, protocol, count) {
 		if (count) return;
 		log(id, 'unsubscribing to service events and logs');
-		forEach(function(dock, next) {
+		forEach(docks, function(dock, next) {
 			dock.unsubscribe(id, next);
 		});
 	});
 
 	var save = function(id, opts, cb) {
-		db.put(id, xtend(db.get(id) || {id:id}, select(opts, ['start', 'build', 'tags', 'revision', 'env'])), cb);
+		var service = xtend(db.get(id) || {id:id}, select(opts, ['start', 'build', 'docks', 'revision', 'env']));
+		if (service.docks) service.docks = parseDocks(service.docks);
+		db.put(id, service, cb);
 	};
 
 	var onstatuschange = function(id, status, cb) {
 		if (!db.has(id)) return cb(new Error('Service not found'));
 
 		var service = db.get(id);
-		var upd = {start:service.start, build:service.build, env:service.env, tags:service.tags};
+		var upd = {start:service.start, build:service.build, env:service.env, docks:service.docks};
 
 		service.stopped = status === 'stop';
 		db.put(id, service, function(err) {
 			if (err) return cb(err);
-
 			log(id, 'sending', status, 'to docks');
-			forEach(function(dock, next) {
+			forEach(docks, function(dock, next) {
 				dock.update(id, upd, function(err) {
 					if (err) return next(err);
 					dock[status](id, next);
@@ -149,7 +170,7 @@ module.exports = function(opts) {
 
 		protocol.on('remove', function(id, cb) {
 			log(id, 'removing service');
-			forEach(function(dock, next) {
+			forEach(docks, function(dock, next) {
 				dock.remove(id, next);
 			}, function(err) {
 				if (err) return cb(err);
@@ -174,11 +195,27 @@ module.exports = function(opts) {
 			if (!service) service = db.get(id);
 			if (!service) return cb(new Error('Service not found'));
 			log(id, 'syncing build to docks');
+
+			var selected = docks.filter(function(dock) {
+				return service.docks && service.docks.indexOf(dock.id) > -1;
+			});
+
+			var unselected = docks.filter(function(dock) {
+				return !service.docks && service.docks.indexOf(dock.id) === -1;
+			});
+
+			var purge = function(err) {
+				if (err) return cb(err);
+				forEach(unselected, function(dock, next) {
+					dock.remove(id, next);
+				}, cb);
+			};
+
 			save(id, service, function(err) {
 				if (err) return cb(err);
-				forEach(function(dock, next) {
+				forEach(selected, function(dock, next) {
 					dock.sync(id, service, next);
-				}, cb);
+				}, purge);
 			});
 		});
 
@@ -195,7 +232,7 @@ module.exports = function(opts) {
 		});
 
 		protocol.on('ps', function(cb) {
-			forEach(function(dock, next) {
+			forEach(docks, function(dock, next) {
 				dock.ps(next);
 			}, cb);
 		});
@@ -334,6 +371,6 @@ module.exports = function(opts) {
 	var port = opts.port || 10002;
 	server.listen(port, function() {
 		log(null, 'listening on', port);
-		if (opts.dock) require('./dock')({port:port+1, remote:'127.0.0.1:'+port, id:opts.id, db:db});
+		if (opts.dock) require('./dock')({port:port+1, remote:'127.0.0.1:'+port, id:opts.id});
 	});
 };

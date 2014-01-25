@@ -18,7 +18,7 @@ module.exports = function(id, opts) {
 			if (service.start)    leaf.start = service.start;
 			if (service.build)    leaf.build = service.build;
 			if (service.revision) leaf.revision = service.revision;
-			if (service.tags)     leaf.tags = service.tags;
+			if (service.docks)    leaf.docks = service.docks;
 			if (service.env)      leaf.env = service.env;
 
 			ui.tree({

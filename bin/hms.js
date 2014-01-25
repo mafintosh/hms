@@ -44,7 +44,7 @@ tab('add')
 	(ids)
 	('--start', '-s')
 	('--build', '-b')
-	('--tags', '-t')
+	('--docks', '-d')
 	('--env', '-e')
 	(function(id, opts) {
 		require('../commands/add')(id, defaults(opts));
@@ -54,12 +54,12 @@ tab('update')
 	(ids)
 	('--start', '-s')
 	('--build', '-b')
-	('--tags', '-t')
+	('--docks', '-d')
 	('--env', '-e')
 	('--restart')
 	('--no-start')
 	('--no-build')
-	('--no-tags')
+	('--no-docks')
 	('--no-env')
 	(function(id, opts) {
 		require('../commands/update')(id, defaults(opts));
@@ -136,6 +136,7 @@ tab('tarball')
 tab('dock')
 	('--id', '-i', os.hostname())
 	('--port', '-p', 10002)
+	('--db', '@file')
 	(function(opts) {
 		require('../commands/dock')(defaults(opts));
 	});
@@ -143,6 +144,7 @@ tab('dock')
 tab('terminal')
 	('--port', '-p', 10002)
 	('--dock', '-d')
+	('--db', '@file')
 	(function(opts) {
 		require('../commands/terminal')(defaults(opts));
 	});

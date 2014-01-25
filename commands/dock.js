@@ -2,6 +2,7 @@ var http = require('http');
 var root = require('root');
 var flat = require('flat-file-db');
 var path = require('path');
+var fs = require('fs');
 var tar = require('tar-fs');
 var zlib = require('zlib');
 var os = require('os');
@@ -31,7 +32,7 @@ var log = function(tag) {
 
 module.exports = function(opts) {
 	var server = root();
-	var db = typeof opts.db == 'object' && opts.db || flat.sync('db');
+	var db = flat.sync(opts.db || 'dock.db');
 	var mons = respawns();
 	var subs = subscriptions();
 	var origin = opts.id || os.hostname();
@@ -148,18 +149,22 @@ module.exports = function(opts) {
 				});
 			};
 
-			var req = http.get(xtend(remote, {
-				path:'/'+id,
-				headers:{origin:origin}
-			}));
+			fs.exists(cwd, function(exists) {
+				if (exists) return upsert();
 
-			log(id, 'fetching build from remote');
-			req.on('error', done);
-			req.on('response', function(response) {
-				if (response.statusCode !== 200) return done(new Error('Could not fetch build'));
-				pump(response, zlib.createGunzip(), tar.extract(cwd), function(err) {
-					if (err) return done(err);
-					upsert();
+				var req = http.get(xtend(remote, {
+					path:'/'+id,
+					headers:{origin:origin}
+				}));
+
+				log(id, 'fetching build from remote');
+				req.on('error', done);
+				req.on('response', function(response) {
+					if (response.statusCode !== 200) return done(new Error('Could not fetch build'));
+					pump(response, zlib.createGunzip(), tar.extract(cwd), function(err) {
+						if (err) return done(err);
+						upsert();
+					});
 				});
 			});
 		});
@@ -174,6 +179,7 @@ module.exports = function(opts) {
 
 		protocol.on('remove', function(id, cb) {
 			if (!docking) return cb(new Error('Cannot remove on a dock'));
+
 			log(id, 'stopping and removing process');
 			mons.remove(id, function() {
 				db.del(id, cb);
@@ -184,7 +190,7 @@ module.exports = function(opts) {
 			if (!docking) return cb(new Error('Cannot update on a dock'));
 			if (!db.has(id)) return onnotfound(cb);
 			log(id, 'updating process');
-			db.put(id, xtend(db.get(id), select(opts, ['start', 'build', 'env', 'tags'])), cb);
+			db.put(id, xtend(db.get(id), select(opts, ['start', 'build', 'env', 'docks'])), cb);
 		});
 
 		protocol.on('restart', function(id, cb) {
