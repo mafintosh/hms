@@ -31,6 +31,7 @@ var defaults = function(opts) {
 
 tab('*')
 	('--key', '-i', '-k', '@file')
+	('--passphrase')
 	('--fingerprint', '-f')
 	('--remote', '-r', '@host');
 

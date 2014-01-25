@@ -27,17 +27,23 @@ module.exports = function(opts) {
 
 	var r = opts.remote;
 	var c = client(opts);
+	var saved = false;
 
 	var save = function(hash, cb) {
+		saved = true;
 		var conf = config.read();
 		if (!conf) conf = {};
 		if (!conf.fingerprints) conf.fingerprints = {};
+		if (opts.key) conf.key = opts.key;
+		if (opts.passphrase) conf.passphrase = opts.passphrase;
 		conf.fingerprints[r] = hash;
 		config.write(conf);
 		cb();
 	};
 
 	c.on('verify', function(hash, cb) {
+		if (opts.expect && hash !== opts.expect) return cb(new Error('Unexpected fingerprint ('+hash+')'));
+
 		console.log('Please verify the remote fingerprint:\n');
 
 		ui.tree({
@@ -63,5 +69,7 @@ module.exports = function(opts) {
 
 	c.list(function(err) {
 		if (err) return ui.error(err);
+		if (saved) console.log('Updated ~/.hms.json with host fingerprint');
+		else console.log('No verification needed')
 	});
 };
