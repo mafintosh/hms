@@ -2,6 +2,7 @@
 
 var tab = require('tabalot');
 var os = require('os');
+var fs = require('fs');
 var xtend = require('xtend');
 var config = require('../lib/config');
 var noop = [];
@@ -9,12 +10,16 @@ var noop = [];
 var ids = function(word, opts, cb) {
 	var hms = require('../');
 	var c = hms(opts.remote);
+	var cached = config.cache(opts.remote);
+
+	if (cached) return cb(null, cached);
+
 	c.list(function(err, list) {
 		if (err) return cb(err);
 		list = list.map(function(service) {
 			return service.id;
 		});
-		cb(null, list);
+		cb(null, config.cache(opts.remote, list));
 	});
 };
 
@@ -48,6 +53,7 @@ tab('add')
 	('--docks', '-d')
 	('--env', '-e')
 	(function(id, opts) {
+		config.cache(opts.remote, null);
 		require('../commands/add')(id, defaults(opts));
 	});
 
@@ -63,12 +69,14 @@ tab('update')
 	('--no-docks')
 	('--no-env')
 	(function(id, opts) {
+		config.cache(opts.remote, null);
 		require('../commands/update')(id, defaults(opts));
 	});
 
 tab('remove')
 	(ids)
 	(function(id, opts) {
+		config.cache(opts.remote, null);
 		require('../commands/remove')(id, defaults(opts));
 	});
 
