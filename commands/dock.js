@@ -30,7 +30,7 @@ var log = function(tag) {
 	console.log.apply(null, arguments);
 };
 
-module.exports = function(opts) {
+module.exports = function(remote, opts) {
 	var server = root();
 	var db = flat.sync(opts.db || 'dock.db');
 	var mons = respawns();
@@ -70,7 +70,7 @@ module.exports = function(opts) {
 		subs.publish('exit', mon.id, origin, code);
 	});
 
-	var remote = parse(xtend(opts));
+	var remote = parse(xtend(remote));
 	var info = {};
 
 	var onmon = function(id, service) {

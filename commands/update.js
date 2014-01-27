@@ -21,11 +21,11 @@ var help = 'You need to specify one (or more) of the following\n'+
 	'--docks [docks-to-deploy-to]\n'+
 	'--env   [NAME=var,NAME2=var2]';
 
-module.exports = function(id, opts) {
+module.exports = function(remote, id, opts) {
 	if (!id) return ui.error('Service name required');
 	if (undef(opts.env, opts.docks, opts.start, opts.start)) return ui.error(help);
 
-	var c = client(opts);
+	var c = client(remote);
 	var unspin = ui.spin('Updating', id);
 
 	var done = function(err) {

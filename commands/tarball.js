@@ -3,10 +3,10 @@ var ui = require('../lib/ui');
 var parse = require('../lib/parse-env');
 var fs = require('fs');
 
-module.exports = function(id, opts) {
+module.exports = function(remote, id, opts) {
 	if (!id) return ui.error('Service name required');
 
-	var c = client(opts);
+	var c = client(remote);
 	var tar = c.tarball(id);
 
 	tar.on('error', function(err) {

@@ -2,10 +2,10 @@ var client = require('../');
 var ui = require('../lib/ui');
 var parse = require('../lib/parse-env');
 
-module.exports = function(id, opts) {
+module.exports = function(remote, id, opts) {
 	if (!id) return ui.error('Service name required');
 
-	var c = client(opts);
+	var c = client(remote);
 	var unspin = ui.spin('Syncing', id);
 	c.sync(id, function(err) {
 		unspin(err);

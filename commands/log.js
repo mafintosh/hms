@@ -3,8 +3,8 @@ var ui = require('../lib/ui');
 var split = require('split');
 var chalk = require('chalk');
 
-module.exports = function(id, opts) {
-	var c = client(opts);
+module.exports = function(remote, id, opts) {
+	var c = client(remote);
 
 	c.subscribe(id, function(err) {
 		if (err) return ui.error(err);

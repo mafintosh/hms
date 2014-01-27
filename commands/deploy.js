@@ -57,14 +57,14 @@ var readSync = function(filename) {
 	return fs.existsSync(filename) && fs.readFileSync(filename, 'utf-8');
 };
 
-module.exports = function(id, opts) {
+module.exports = function(remote, id, opts) {
 	if (!id) return ui.error('Service name required');
 
 	var repo = findGitRepository();
 	if (repo && repo !== process.cwd() && !opts.force) return ui.error('You are in a git repo but not at the root. Use --force to ignore');
 
 	var ignore = opts.ignore === false ? noop : compileIgnore(readSync('.hmsignore') || readSync('.gitignore') || '');
-	var c = client(opts);
+	var c = client(remote);
 
 	var tmp = path.join(os.tmpDir(), 'hms-'+id+'.tgz');
 	var rev = typeof opts.revision === 'string' ? opts.revision : undefined;

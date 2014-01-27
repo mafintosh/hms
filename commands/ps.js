@@ -2,8 +2,8 @@ var relativeDate = require('relative-date');
 var client = require('../');
 var ui = require('../lib/ui');
 
-module.exports = function(id, opts) {
-	var c = client(opts);
+module.exports = function(remote, id, opts) {
+	var c = client(remote);
 
 	var filter = function(proc) {
 		return !id || proc.id === id;
