@@ -1,8 +1,8 @@
-Usage: hms [command] [options?]
+Usage: hms [command] [remote] [service?] [options?]
 
 Available commands are:
   completion   setup tab completion
-  verify       verify the remote
+  remotes      manage remotes
   add          add a new service
   update       update an existing service
   remove       remove and stop a service
@@ -18,6 +18,3 @@ Available commands are:
 Use the following commands to setup a remote
   dock         start a service dock
   terminal     start a service terminal
-
-A remote dock or terminal can specified using
-  --remote,-r  user@hostname
