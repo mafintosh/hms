@@ -23,7 +23,7 @@ var help = 'You need to specify one (or more) of the following\n'+
 
 module.exports = function(remote, id, opts) {
 	if (!id) return ui.error('Service name required');
-	if (undef(opts.env, opts.docks, opts.start, opts.start)) return ui.error(help);
+	if (!opts.force && undef(opts.env, opts.docks, opts.start, opts.build)) return ui.error(help);
 
 	var c = client(remote);
 	var unspin = ui.spin('Updating', id);
