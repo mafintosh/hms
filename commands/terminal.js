@@ -197,11 +197,11 @@ module.exports = function(opts) {
 			log(id, 'syncing build to docks');
 
 			var selected = docks.filter(function(dock) {
-				return service.docks && service.docks.indexOf(dock.id) > -1;
+				return service.docks && [].concat(service.docks).indexOf(dock.id) > -1;
 			});
 
 			var unselected = docks.filter(function(dock) {
-				return !service.docks && service.docks.indexOf(dock.id) === -1;
+				return !service.docks || [].concat(service.docks).indexOf(dock.id) === -1;
 			});
 
 			var purge = function(err) {
