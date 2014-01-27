@@ -371,6 +371,6 @@ module.exports = function(opts) {
 	var port = opts.port || 10002;
 	server.listen(port, function() {
 		log(null, 'listening on', port);
-		if (opts.dock) require('./dock')(remote, {port:port+1, remote:'127.0.0.1:'+port, id:opts.id});
+		if (opts.dock) require('./dock')('127.0.0.1:'+port, {port:port+1, id:opts.id});
 	});
 };
