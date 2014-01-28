@@ -166,7 +166,7 @@ tab('dock')
 	('--id', '-i', os.hostname())
 	('--port', '-p', 10002)
 	('--db', '@file')
-	(function(opts) {
+	(function(remote, opts) {
 		require('../commands/dock')(resolve(remote, opts), opts);
 	});
 
