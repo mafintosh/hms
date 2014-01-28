@@ -10,8 +10,6 @@ module.exports = function(remote, id, opts) {
 	if (!id) return ui.error('Service name required');
 	if (!opts.start || !opts.docks) return ui.error(help);
 
-	if (opts.env) opts.env = parse(opts.env);
-
 	var c = client(remote);
 	var unspin = ui.spin('Adding', id);
 
