@@ -272,7 +272,7 @@ module.exports = function(opts) {
 	server.put('/{id}', function(req, res) {
 		var id = req.params.id;
 		var deployed = new Date().toISOString();
-		var cwd = path.join('builds', id+'@'+deployed);
+		var cwd = path.join('builds', id+'@'+deployed).replace(/:/g, '-');
 
 		var onerror = function(status, message) {
 			log(id, 'build failed');
