@@ -129,7 +129,7 @@ module.exports = function(remote, opts) {
 			if (!docking) return cb(new Error('Cannot sync from a dock'));
 			if (!service) return cb(new Error('Service must be passed'));
 
-			var cwd = path.join('builds', id+'@'+service.deployed);
+			var cwd = path.join('builds', id+'@'+service.deployed).replace(/:/g, '-');
 
 			var done = once(function(err) {
 				if (err) return onerror(err);
