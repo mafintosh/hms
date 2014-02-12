@@ -275,7 +275,7 @@ module.exports = function(opts) {
 		var cwd = path.join('builds', id+'@'+deployed).replace(/:/g, '-');
 
 		var onerror = function(status, message) {
-			log(id, 'build failed');
+			log(id, 'build failed ('+message+')');
 			rimraf(cwd, function() {
 				res.statusCode = status;
 				res.addTrailers({'X-Status': status});
