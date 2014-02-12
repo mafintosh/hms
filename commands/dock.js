@@ -161,7 +161,7 @@ module.exports = function(remote, opts) {
 				req.on('error', done);
 				req.on('response', function(response) {
 					if (response.statusCode !== 200) return done(new Error('Could not fetch build'));
-					pump(response, zlib.createGunzip(), tar.extract(cwd), function(err) {
+					pump(response, zlib.createGunzip(), tar.extract(cwd, {readable:true}), function(err) {
 						if (err) return done(err);
 						upsert();
 					});

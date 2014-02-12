@@ -304,7 +304,7 @@ module.exports = function(opts) {
 
 		log(id, 'receiving tarball');
 		res.setHeader('Trailer', 'X-Status');
-		pump(req, zlib.createGunzip(), tar.extract(cwd), function(err) {
+		pump(req, zlib.createGunzip(), tar.extract(cwd, {readable:true}), function(err) {
 			if (err) return onerror(500, err.message);
 
 			var service = db.get(id);
