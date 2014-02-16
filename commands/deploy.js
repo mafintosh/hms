@@ -14,6 +14,7 @@ var chalk = require('chalk');
 var minimatch = require('minimatch');
 var client = require('../');
 var ui = require('../lib/ui');
+var logStream = require('../lib/log-stream');
 
 var WS = '                    ';
 var noop = function() {};
@@ -89,8 +90,11 @@ module.exports = function(remote, id, opts) {
 		var unspin = ui.spin('Connecting to remote');
 		c.open(function(err) {
 			if (err) return unspin(err);
-			unspin();
-			onupload();
+			c.subscribe(id, function(err) {
+				if (err) return unspin(err);
+				unspin();
+				onupload();
+			});
 		});
 	};
 
@@ -148,14 +152,20 @@ module.exports = function(remote, id, opts) {
 			unspin = ui.spin('Syncing', id);
 		});
 
+		var logs;
+
 		deploy.on('restarting', function() {
 			if (unspin) unspin();
 			unspin = ui.spin('Restarting', id);
+			logs = logStream(c);
 		});
 
 		deploy.on('success', function() {
 			if (unspin) unspin();
-			console.log('\nSuccessfully deployed', id, '('+(Date.now()-then)+'ms)');
+			if (!logs || opts.log === false) return process.exit(0);
+
+			console.log('');
+			logs.pipe(process.stdout);
 		});
 
 		pump(fs.createReadStream(tmp), prog, deploy, function(err) {
