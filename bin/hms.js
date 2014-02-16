@@ -147,6 +147,7 @@ tab('sync')
 
 tab('deploy')
 	('--revision', '-r')
+	('--no-log')
 	(remotes)
 	(ids)
 	(function(remote, id, opts) {
