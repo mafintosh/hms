@@ -164,7 +164,7 @@ module.exports = function(remote, id, opts) {
 			if (unspin) unspin();
 			if (!logs || opts.log === false) return process.exit(0);
 
-			console.log('');
+			console.log('\nForwarding', id, 'output\n');
 			logs.pipe(process.stdout);
 		});
 
