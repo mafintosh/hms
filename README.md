@@ -82,6 +82,8 @@ Upload cwd as a tarball to service-name and deploy and restart it.
 
 * `--revision` to set a deploy revision tag. Defaults to `git describe` if you are in a git repo.
 
+After deploying `hms` will tail service output and print it to stdout until you hit `ctrl+c`.
+
 #### `hms remove [remote] [service-name]`
 
 Stop and remove a service.
