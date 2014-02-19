@@ -13,6 +13,9 @@ module.exports = function(remote, id, opts) {
 		if (err) return ui.error(err);
 
 		docks.forEach(function(dock) {
+			dock.list = dock.list.sort(function(a, b) {
+				return a.id.localeCompare(b.id);
+			});
 			var nodes = dock.list.filter(filter).map(function(proc) {
 				var node = {};
 				var leaf = {};

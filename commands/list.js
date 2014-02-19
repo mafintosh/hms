@@ -12,6 +12,9 @@ module.exports = function(remote, id, opts) {
 
 		if (!list.length) return ui.empty();
 
+		list = list.sort(function(a, b) {
+			return a.id.localeCompare(b.id);
+		});
 		list.forEach(function(service) {
 			var leaf = {};
 
