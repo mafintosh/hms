@@ -183,6 +183,7 @@ module.exports = function(remote, id, opts) {
 			deploy.on('error', function(err) {
 				if (unspin) return unspin(err);
 				ui.error(err);
+				process.exit(1);
 			});
 		});
 	};
