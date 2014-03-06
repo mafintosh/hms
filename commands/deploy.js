@@ -75,15 +75,23 @@ module.exports = function(remote, id, opts) {
 
 	console.log('Deploying', path.basename(process.cwd()), 'to', id+'\n');
 
+	var uploadSucceded = false;
+
 	var uploading = function(pct, transferred, speed) {
+		if (uploadSucceded) return;
+		uploadSucceded = pct === 100;
+
+		if (!ui.TTY && uploadSucceded) return console.log(ui.SUCCESS, 'Uploading', id);
+		if (!ui.TTY) return;
+
 		var arrow = Array(Math.floor(WS.length * pct/100)).join('=')+'>';
 		var bar = '['+arrow+WS.slice(arrow.length)+']';
 
-		log((pct === 100 ? ui.SUCCESS : ui.PROGRESS), 'Uploading', id, chalk.cyan(bar), pretty(transferred), '('+pretty(speed)+'/s) ');
+		log((uploadSucceded ? ui.SUCCESS : ui.PROGRESS), 'Uploading', id, chalk.cyan(bar), pretty(transferred), '('+pretty(speed)+'/s) ');
 	};
 
 	var onuploaderror = function(err) {
-		log(ui.ERROR, 'Uploading', id, '('+err.message+') ');
+		(ui.TTY ? log : console.log)(ui.ERROR, 'Uploading', id, '('+err.message+') ');
 	};
 
 	var onopen = function() {
@@ -108,7 +116,8 @@ module.exports = function(remote, id, opts) {
 	};
 
 	var onupload = function() {
-		log(ui.PROGRESS, 'Uploading', id, chalk.cyan('[>'+WS.slice(1)+'] '));
+		if (ui.TTY) log(ui.PROGRESS, 'Uploading', id, chalk.cyan('[>'+WS.slice(1)+'] '));
+		else console.log(ui.PROGRESS, 'Uploading', id);
 
 		var deploy = c.deploy(id, {revision:rev});
 		var unspin;
