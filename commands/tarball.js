@@ -1,6 +1,5 @@
 var client = require('../');
 var ui = require('../lib/ui');
-var parse = require('../lib/parse-env');
 var fs = require('fs');
 
 module.exports = function(remote, id, opts) {
