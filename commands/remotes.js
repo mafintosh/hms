@@ -42,7 +42,7 @@ module.exports = function(cmd, remote, url, opts) {
 	var add = function() {
 		if (!remote) return ui.error('Remote is required');
 		if (!url) return ui.error('Remote url is required');
-		if (conf.key && conf.key.indexOf(path.resolve('/')) === -1) conf.key = path.join(process.cwd(), conf.key);
+		if (conf.key && conf.key.indexOf(path.resolve('/')) !== 0) conf.key = path.join(process.cwd(), conf.key);
 
 		var oldFingerprint = conf.fingerprint;
 		delete conf.fingerprint;
