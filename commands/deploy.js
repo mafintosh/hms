@@ -92,6 +92,7 @@ module.exports = function(remote, id, opts) {
 
 	var onuploaderror = function(err) {
 		(ui.TTY ? log : console.log)(ui.ERROR, 'Uploading', id, '('+err.message+') ');
+		process.exit(1);
 	};
 
 	var onopen = function() {
