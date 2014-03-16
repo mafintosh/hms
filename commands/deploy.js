@@ -166,6 +166,7 @@ module.exports = function(remote, id, opts) {
 
 		deploy.on('restarting', function() {
 			if (unspin) unspin();
+			c.subscribe(id);
 			unspin = ui.spin('Restarting', id);
 			logs = logStream(c);
 		});
