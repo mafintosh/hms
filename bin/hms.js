@@ -107,6 +107,7 @@ tab('ps')
 	});
 
 tab('start')
+	('--no-log')
 	(remotes)
 	(ids)
 	(function(remote, id, opts) {
@@ -121,6 +122,7 @@ tab('stop')
 	});
 
 tab('restart')
+	('--no-log')
 	(remotes)
 	(ids)
 	(function(remote, id, opts) {
