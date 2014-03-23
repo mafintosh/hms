@@ -31,7 +31,8 @@
     "string-editor": "~0.1.0",
     "known-hosts": "~0.1.0",
     "tar-fs": "~0.2.1",
-    "split": "~0.3.0"
+    "split": "~0.3.0",
+    "hms-protocol": "^0.2.1"
   },
   "main": "./lib/client.js",
   "bin": {
