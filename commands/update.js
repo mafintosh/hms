@@ -2,6 +2,7 @@ var xtend = require('xtend');
 var client = require('../');
 var ui = require('../lib/ui');
 var updateable = require('../lib/updateable');
+var logStream = require('../lib/log-stream');
 
 var stringify = function(map) {
 	return Object.keys(map || {}).reduce(function(str, key) {
@@ -34,7 +35,12 @@ module.exports = function(remote, id, opts) {
 			unspin(err);
 			if (!opts.restart) return;
 			unspin = ui.spin('Restarting', id);
-			c.restart(id, unspin);
+			c.restart(id, function(err) {
+				unspin(err);
+				if (opts.log === false) return;
+				console.log('\nForwarding', id, 'output\n');
+				logStream(c).pipe(process.stdout);
+			});
 		});
 	};
 
