@@ -31,7 +31,8 @@
     "known-hosts": "^0.1.0",
     "tar-fs": "^0.2.1",
     "split": "^0.3.0",
-    "hms-protocol": "^0.2.1"
+    "hms-protocol": "^0.3.0",
+    "deck": "0.0.4"
   },
   "main": "./lib/client.js",
   "bin": {
