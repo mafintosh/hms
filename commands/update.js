@@ -19,18 +19,21 @@ var undef = function() {
 var help = 'You need to specify one (or more) of the following\n'+
 	'--start [start-script]\n'+
 	'--build [build-script]\n'+
-	'--docks [docks-to-deploy-to]\n'+
+	'--tag   [add-a-tag]\n'+
+	'--untag [remove-a-tag]\n'+
 	'--env   [NAME=var,NAME2=var2]';
 
 module.exports = function(remote, id, opts) {
 	if (!id) return ui.error('Service name required');
-	if (!opts.force && undef(opts.env, opts.docks, opts.start, opts.build)) return ui.error(help);
+	if (!opts.force && undef(opts.env, opts.tag, opts.untag, opts.start, opts.build)) return ui.error(help);
 
 	var c = client(remote);
 	var unspin = ui.spin('Updating', id);
+	var untags = [].concat(opts.untag || []);
 
 	var done = function(err) {
 		if (err) return unspin(err);
+
 		c.update(id, opts, function(err) {
 			unspin(err);
 			if (!opts.restart) return;
@@ -44,10 +47,21 @@ module.exports = function(remote, id, opts) {
 		});
 	};
 
-	if (!opts.env && !opts.docks && !opts.start && !opts.build) return done();
+	if (!opts.env && !opts.tag && !opts.untag && !opts.start && !opts.build) return done();
 
 	c.get(id, function(err, service) {
 		if (err) return done(err);
+
+		var filtered = {};
+		var tags = {};
+
+		(service.tags || []).concat(opts.tag || []).forEach(function(tag) {
+			if (untags.indexOf(tag) === -1) tags[tag] = 1;
+		});
+
+		opts.tags = Object.keys(tags);
+		delete opts.tag;
+
 		updateable(id, service, opts, done);
 	});
 };

@@ -12,6 +12,7 @@ var url = require('url');
 var pump = require('pump');
 var os = require('os');
 var thunky = require('thunky');
+var deck = require('deck');
 var once = require('once');
 var proc = require('child_process');
 var protocol = require('../lib/protocol');
@@ -32,7 +33,7 @@ var log = function(tag) {
 
 var shuffle = function(list) {
 	return list.sort(function() {
-		return Math.random() < 0.5;
+		return Math.random() < 0.5 ? -1 : 1;
 	});
 };
 
@@ -41,13 +42,18 @@ module.exports = function(opts) {
 	var db = flat.sync(opts.db || 'terminal.db');
 	var subs = subscriptions();
 	var docks = [];
+	var clock = 0;
 
-	var ondock = function(protocol, host) {
-		protocol.id = host;
+	var ondock = function(protocol, handshake) {
+		clock++;
+
+		protocol.id = handshake.id;
+		handshake.protocol = protocol;
+		docks.push(handshake);
 
 		protocol.on('close', function() {
-			docks.splice(docks.indexOf(protocol), 1);
-			log(null, 'connection to dock ('+host+') dropped');
+			docks.splice(docks.indexOf(handshake), 1);
+			log(null, 'connection to dock ('+handshake.id+') dropped');
 		});
 
 		protocol.on('stdout', function(id, origin, data) {
@@ -66,8 +72,7 @@ module.exports = function(opts) {
 			subs.publish('exit', id, origin, code);
 		});
 
-		docks.push(protocol);
-		log(null, 'connection to dock ('+host+') established');
+		log(null, 'connection to dock ('+handshake.id+') established');
 
 		subs.subscriptions().forEach(function(key) {
 			protocol.subscribe(key);
@@ -76,18 +81,6 @@ module.exports = function(opts) {
 
 	var clean = opts.dock ? noop : function(dir) {
 		rimraf(dir, noop);
-	};
-
-	var parseDocks = function(d) {
-		if (Array.isArray(d)) return d;
-		if (typeof d === 'string') return [d];
-		if (typeof d !== 'number') return null;
-
-		var ids = docks.map(function(dock) {
-			return dock.id;
-		});
-
-		return shuffle(ids).slice(0, d);
 	};
 
 	var forEach = function(list, fn, cb) {
@@ -117,7 +110,7 @@ module.exports = function(opts) {
 		if (count > 1) return;
 		log(id, 'subscribing to service events and logs');
 		forEach(docks, function(dock, next) {
-			dock.subscribe(id, next);
+			dock.protocol.subscribe(id, next);
 		});
 	});
 
@@ -125,13 +118,12 @@ module.exports = function(opts) {
 		if (count) return;
 		log(id, 'unsubscribing to service events and logs');
 		forEach(docks, function(dock, next) {
-			dock.unsubscribe(id, next);
+			dock.protocol.unsubscribe(id, next);
 		});
 	});
 
 	var save = function(id, opts, cb) {
-		var service = xtend(db.get(id) || {id:id}, select(opts, ['start', 'build', 'docks', 'revision', 'env']));
-		if (service.docks) service.docks = parseDocks(service.docks);
+		var service = xtend(db.get(id) || {id:id}, select(opts, ['start', 'build', 'limit', 'docks', 'tags', 'revision', 'env']));
 		db.put(id, service, cb);
 	};
 
@@ -139,19 +131,102 @@ module.exports = function(opts) {
 		if (!db.has(id)) return cb(new Error('Service not found'));
 
 		var service = db.get(id);
-		var upd = {start:service.start, build:service.build, env:service.env, docks:service.docks};
+
+		var upd = {
+			start:service.start,
+			build:service.build,
+			env:service.env,
+			tags:service.tags,
+			limit:service.limit,
+			docks:service.docks
+		};
 
 		service.stopped = status === 'stop';
 		db.put(id, service, function(err) {
 			if (err) return cb(err);
 			log(id, 'sending', status, 'to docks');
 			forEach(docks, function(dock, next) {
-				dock.update(id, upd, function(err) {
+				dock.protocol.update(id, upd, function(err) {
 					if (err) return next(err);
-					dock[status](id, next);
+					dock.protocol[status](id, next);
 				});
 			}, cb);
 		});
+	};
+
+	var validService = function(service, dock) {
+		var tags = service.tags || [];
+		return [dock.id].concat(dock.tags || []).some(function(tag) {
+			return tags.indexOf(tag) > -1;
+		});
+	};
+
+	var sync = function(service, cb) {
+		if (!cb) cb = noop;
+		if (!service.deployed) return cb();
+
+		var validDocks = docks
+			.filter(function(dock) {
+				return validService(service, dock);
+			})
+			.map(function(dock) {
+				return dock.id;
+			});
+
+		service.docks = (service.docks || []).filter(function(current) {
+			return validDocks.indexOf(current) > -1;
+		});
+
+		if (typeof service.limit !== 'number') {
+			service.docks = validDocks;
+		} else {
+			service.docks = service.docks.slice(0, service.limit);
+			validDocks = deck.shuffle(validDocks);
+			for (var i = 0; i < validDocks && service.docks.length < service.limit; i++) {
+				if (service.docks.indexOf(validDocks[i]) === -1) service.docks.push(validDocks[i]);
+			}
+		}
+
+		var purge = function(err) {
+			if (err) return cb(err);
+
+			var purged = docks.filter(function(dock) {
+				return service.docks.indexOf(dock.id) === -1;
+			});
+
+			forEach(purged, function(dock, next) {
+				dock.protocol.remove(service.id, next);
+			}, cb);
+		};
+
+		var docksMap = {};
+		docks.forEach(function(dock) {
+			docksMap[dock.id] = dock;
+		});
+
+		var selected = service.docks.map(function(id) {
+			return docksMap[id];
+		});
+
+		save(service.id, service, function(err) {
+			if (err) return cb(err);
+			forEach(selected, function(dock, next) {
+				dock.protocol.sync(service.id, service, next);
+			}, function(err) {
+				if (err || service.stopped) return purge(err);
+				forEach(selected, function(dock, next) {
+					dock.protocol.start(dock.id, next);
+				}, purge);
+			});
+		});
+	};
+
+	var syncAll = function(cb) {
+		var services = db.keys().map(function(id) {
+			return db.get(id);
+		});
+
+		forEach(services, sync, cb);
 	};
 
 	var onclient = function(protocol) {
@@ -171,7 +246,7 @@ module.exports = function(opts) {
 		protocol.on('remove', function(id, cb) {
 			log(id, 'removing service');
 			forEach(docks, function(dock, next) {
-				dock.remove(id, next);
+				dock.protocol.remove(id, next);
 			}, function(err) {
 				if (err) return cb(err);
 				db.del(id, cb);
@@ -195,28 +270,7 @@ module.exports = function(opts) {
 			if (!service) service = db.get(id);
 			if (!service) return cb(new Error('Service not found'));
 			log(id, 'syncing build to docks');
-
-			var selected = docks.filter(function(dock) {
-				return service.docks && [].concat(service.docks).indexOf(dock.id) > -1;
-			});
-
-			var unselected = docks.filter(function(dock) {
-				return !service.docks || [].concat(service.docks).indexOf(dock.id) === -1;
-			});
-
-			var purge = function(err) {
-				if (err) return cb(err);
-				forEach(unselected, function(dock, next) {
-					dock.remove(id, next);
-				}, cb);
-			};
-
-			save(id, service, function(err) {
-				if (err) return cb(err);
-				forEach(selected, function(dock, next) {
-					dock.sync(id, service, next);
-				}, purge);
-			});
+			sync(service, cb);
 		});
 
 		protocol.on('restart', function(id, cb) {
@@ -233,7 +287,7 @@ module.exports = function(opts) {
 
 		protocol.on('ps', function(cb) {
 			forEach(docks, function(dock, next) {
-				dock.ps(next);
+				dock.protocol.ps(next);
 			}, cb);
 		});
 
@@ -364,13 +418,39 @@ module.exports = function(opts) {
 	server.on('connect', function(req, socket, data) {
 		var p = protocol(socket, data);
 		socket.write(HANDSHAKE);
-		if (req.url === '/dock') ondock(p, req.headers.origin || 'unknown');
-		else onclient(p);
+
+		if (req.url === '/dock') return ondock(p, {id:req.headers.origin || 'unknown', tags:[]}); // deprecated
+		if (req.url === '/') return onclient(p); // deprecated
+
+		p.once('handshake', function(handshake, cb) {
+			if (handshake.type === 'dock') {
+				ondock(p, handshake);
+				return cb();
+			}
+			if (handshake.type === 'client') {
+				onclient(p);
+				return cb();
+			}
+
+			cb(new Error('invalid handshake'));
+		});
 	});
 
 	var port = opts.port || 10002;
 	server.listen(port, function() {
 		log(null, 'listening on', port);
-		if (opts.dock) require('./dock')('127.0.0.1:'+port, {port:port+1, id:opts.id});
+		if (opts.dock) require('./dock')('127.0.0.1:'+port, {port:port+1, id:opts.id, tag:opts.tag});
+		if (opts.sync === false) return;
+
+		var prev = clock;
+		var loop = function() {
+			if (clock === prev) return setTimeout(loop, 15000);
+			prev = clock;
+			syncAll(function() {
+				setTimeout(loop, 15000);
+			});
+		};
+
+		setTimeout(loop, 15000);
 	});
 };

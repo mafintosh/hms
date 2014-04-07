@@ -36,6 +36,14 @@ module.exports = function(remote, opts) {
 	var mons = respawns();
 	var subs = subscriptions();
 	var origin = opts.id || os.hostname();
+	var tags = [].concat(opts.tag || []);
+
+	var me = {
+		type:'dock',
+		version: pkg.version,
+		id: origin,
+		tags: tags
+	};
 
 	subs.on('subscribe', function(id, protocol, count) {
 		if (count > 1) return;
@@ -73,6 +81,13 @@ module.exports = function(remote, opts) {
 	var remote = parse(xtend(remote));
 	var info = {};
 
+	var validService = function(service) {
+		var tags = service.tags;
+		return [me.id].concat(me.tags).some(function(tag) {
+			return tags.indexOf(tag) > -1;
+		});
+	};
+
 	var onmon = function(id, service) {
 		if (!service.start || !service.cwd) return false;
 
@@ -89,7 +104,8 @@ module.exports = function(remote, opts) {
 	};
 
 	var onstatuschange = function(id, status, cb) {
-		onmon(id, db.get(id));
+		var s = db.get(id);
+		onmon(id, s);
 
 		var ondone = function() {
 			if (!db.has(id)) return cb();
@@ -101,12 +117,12 @@ module.exports = function(remote, opts) {
 		switch (status) {
 			case 'start':
 			log(id, 'starting process');
-			mons.start(id);
+			if (validService(s)) mons.start(id);
 			return ondone();
 
 			case 'restart':
 			log(id, 'restarting process');
-			mons.restart(id);
+			if (validService(s)) mons.restart(id);
 			return ondone();
 
 			case 'stop':
@@ -238,7 +254,7 @@ module.exports = function(remote, opts) {
 	var connect = function() {
 		var req = http.request(xtend(remote, {
 			method:'CONNECT',
-			path:'/dock',
+			path:'/hms-protocol',
 			headers:{origin:origin}
 		}));
 
@@ -254,14 +270,15 @@ module.exports = function(remote, opts) {
 			dropped = false;
 			log(null, 'connection to remote established');
 			var p = protocol(socket, data);
-			p.ping();
+
 			p.on('close', reconnect);
+			p.handshake(me);
+
 			onprotocol(p, true);
 		});
 
 		req.end();
 	};
-
 
 	server.get('/', function(req, res) {
 		res.end('hms-dock '+pkg.version+'\n');
