@@ -11,22 +11,22 @@ Afterwards you should have an command line tool called `hms`.
 ## Getting started
 
 First ssh to a remote server and install hms.
-Then start up a terminal and a dock.
+Then start up a terminal.
 
-	hms terminal --dock # starts both a terminal and a dock
+	hms terminal # starts both a terminal and a dock
 
-Optionally you can start the dock (or multiple docks as seperate processes)
+In a new folder start the dock (or multiple docks as seperate processes). The dock will run your apps
 
-	hms dock [url-to-a-terminal]
+	hms dock [url-to-a-terminal] --tag my-dock # add a some tags
 
 Then on your local machine add the remote
 
 	hms remotes add my-remote username@your-server.com
 
-hms uses ssh to contact the server so `username@your-server.com` should be similar to arguments you passed to ssh.
+hms uses ssh to contact the server so `username@your-server.com` should be similar to the arguments you passed to ssh.
 Then add a simple node app
 
-	hms add my-remote my-app --start 'node .' --build 'npm install' --docks 1
+	hms add my-remote my-app --start 'node .' --build 'npm install' --tag my-dock
 	hms list my-remote my-app
 
 The `--start` argument is your start script, `--build` is your build script and `--docks` tells hms to deploy it to 1 dock.
@@ -66,7 +66,8 @@ Add a new service.
 
 * `--start,-s` to specify a `start` script. Ie. `node .` to start a node service
 * `--build,-b` to specify a `build` script. Ie. `npm install .` to install node modules
-* `--docks,-d` to specify the docks to deploy to. If set to a number it will be converted to a set of docks.
+* `--tag,-t` to specify the docks tags to match when choosing where to deploy to.
+* `--limit,-l` to set a max limit on the number of docks to deploy to.
 * `--env,-e` to set env varibles. Format is `ENV_VAR=value;ENV_VAR2=value2
 
 #### `hms update [remote] [service-name]`
@@ -111,7 +112,6 @@ Run the following commands on your remote server that you want to deploy to
 
 Starts a "build-and-distribute" hub that you can deploy to. After you deploy to a terminal it will run the build script and distribute the build to the docks.
 
-* `--dock,-d` to also start a dock (this allows the terminal to run services as well)
 * `--port,-p` to change the port the terminal binds to. Defaults to 10002
 * `--db` to set the db file
 
@@ -121,6 +121,7 @@ Starts a dock that can run and manage services.
 
 * `--id,-i` to give the dock an optional id. Defaults to hostname
 * `--port,-p` to change the port the dock binds to. Defaults to 10002
+* `--tag,-t` to give this dock some tags that you can match when deploying
 * `--db` to set the db file
 
 ## License
