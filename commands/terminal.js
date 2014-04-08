@@ -42,11 +42,8 @@ module.exports = function(opts) {
 	var db = flat.sync(opts.db || 'terminal.db');
 	var subs = subscriptions();
 	var docks = [];
-	var clock = 0;
 
 	var ondock = function(protocol, handshake) {
-		clock++;
-
 		protocol.id = handshake.id;
 		handshake.protocol = protocol;
 		docks.push(handshake);
@@ -219,14 +216,6 @@ module.exports = function(opts) {
 				}, purge);
 			});
 		});
-	};
-
-	var syncAll = function(cb) {
-		var services = db.keys().map(function(id) {
-			return db.get(id);
-		});
-
-		forEach(services, sync, cb);
 	};
 
 	var onclient = function(protocol) {
@@ -416,20 +405,20 @@ module.exports = function(opts) {
 	});
 
 	server.on('connect', function(req, socket, data) {
-		var p = protocol(socket, data);
 		socket.write(HANDSHAKE);
 
-		if (req.url === '/dock') return ondock(p, {id:req.headers.origin || 'unknown', tags:[]}); // deprecated
-		if (req.url === '/') return onclient(p); // deprecated
+		var p = protocol(socket, data);
 
 		p.once('handshake', function(handshake, cb) {
+			var reply = {type:'terminal', version:pkg.version};
+
 			if (handshake.type === 'dock') {
 				ondock(p, handshake);
-				return cb();
+				return cb(null, reply);
 			}
 			if (handshake.type === 'client') {
 				onclient(p);
-				return cb();
+				return cb(null, reply);
 			}
 
 			cb(new Error('invalid handshake'));
@@ -441,16 +430,5 @@ module.exports = function(opts) {
 		log(null, 'listening on', port);
 		if (opts.dock) require('./dock')('127.0.0.1:'+port, {port:port+1, id:opts.id, tag:opts.tag});
 		if (opts.sync === false) return;
-
-		var prev = clock;
-		var loop = function() {
-			if (clock === prev) return setTimeout(loop, 15000);
-			prev = clock;
-			syncAll(function() {
-				setTimeout(loop, 15000);
-			});
-		};
-
-		setTimeout(loop, 15000);
 	});
 };

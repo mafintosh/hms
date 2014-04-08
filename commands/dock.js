@@ -254,8 +254,9 @@ module.exports = function(remote, opts) {
 	var connect = function() {
 		var req = http.request(xtend(remote, {
 			method:'CONNECT',
-			path:'/hms-protocol',
-			headers:{origin:origin}
+			headers:{
+				origin:origin
+			}
 		}));
 
 		var reconnect = once(function() {
