@@ -273,9 +273,10 @@ module.exports = function(remote, opts) {
 			var p = protocol(socket, data);
 
 			p.on('close', reconnect);
-			p.handshake(me);
-
-			onprotocol(p, true);
+			p.handshake(me, function(err, handshake) {
+				if (err) return p.destroy();
+				onprotocol(p, true);
+			});
 		});
 
 		req.end();
@@ -291,7 +292,19 @@ module.exports = function(remote, opts) {
 
 	server.on('connect', function(req, socket, data) {
 		socket.write(HANDSHAKE);
-		onprotocol(protocol(socket, data), false);
+		var p = protocol(socket, data);
+
+		p.once('handshake', function(handshake, cb) {
+			if (!handshake) handshake = {};
+			if (handshake.protocol !== protocol.version) return cb(new Error('Server and client do not speak the same protocol'));
+
+			if (handshake.type === 'client') {
+				onprotocol(p, false);
+				return cb(null, me);
+			}
+
+			cb(new Error('Invalid handshake'));
+		});
 	});
 
 	var port = opts.port || 10002;
