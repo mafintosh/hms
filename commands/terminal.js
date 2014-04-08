@@ -410,6 +410,9 @@ module.exports = function(opts) {
 		var p = protocol(socket, data);
 
 		p.once('handshake', function(handshake, cb) {
+			if (!handshake) handshake = {};
+			if (handshake.protocol !== protocol.version) return cb(new Error('Server and client do not speak the same protocol'));
+
 			var reply = {type:'terminal', version:pkg.version};
 
 			if (handshake.type === 'dock') {
@@ -421,7 +424,7 @@ module.exports = function(opts) {
 				return cb(null, reply);
 			}
 
-			cb(new Error('invalid handshake'));
+			cb(new Error('Invalid handshake'));
 		});
 	});
 
