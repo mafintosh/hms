@@ -42,7 +42,8 @@ module.exports = function(remote, opts) {
 		type:'dock',
 		version: pkg.version,
 		id: origin,
-		tags: tags
+		tags: tags,
+		default: !!opts.default
 	};
 
 	subs.on('subscribe', function(id, protocol, count) {

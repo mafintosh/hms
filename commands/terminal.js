@@ -153,6 +153,7 @@ module.exports = function(opts) {
 
 	var validService = function(service, dock) {
 		var tags = service.tags || [];
+		if (!tags.length && dock.default) return true;
 		return [dock.id].concat(dock.tags || []).some(function(tag) {
 			return tags.indexOf(tag) > -1;
 		});

@@ -173,6 +173,7 @@ tab('dock')
 	('--port', '-p', 10002)
 	('--db', '@file')
 	('--tag', '-t')
+	('--default')
 	(function(remote, opts) {
 		require('../commands/dock')(resolve(remote, opts), opts);
 	});
