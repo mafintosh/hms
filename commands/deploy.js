@@ -172,11 +172,21 @@ module.exports = function(remote, id, opts) {
 		});
 
 		deploy.on('success', function() {
-			if (unspin) unspin();
-			if (!logs || opts.log === false) return process.exit(0);
+			c.ps(function(err, ps) {
+				if (unspin) unspin(err);
+				if (!logs || opts.log === false) return process.exit(0);
 
-			console.log('\nForwarding', id, 'output\n');
-			logs.pipe(process.stdout);
+				var running = ps.some(function(dock) {
+					return (dock.list || []).some(function(proc) {
+						return proc.id === id;
+					});
+				});
+
+				if (!running) return ui.error('Service does not match any docks. Exiting...\n');
+
+				console.log('\nForwarding', id, 'output\n');
+				logs.pipe(process.stdout);
+			});
 		});
 
 		pump(fs.createReadStream(tmp), prog, deploy, function(err) {
