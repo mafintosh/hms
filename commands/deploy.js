@@ -178,7 +178,7 @@ module.exports = function(remote, id, opts) {
 
 				var running = ps.some(function(dock) {
 					return (dock.list || []).some(function(proc) {
-						return proc.id === id;
+						return proc.status !== 'stopped' && proc.id === id;
 					});
 				});
 

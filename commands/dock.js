@@ -83,7 +83,8 @@ module.exports = function(remote, opts) {
 	var info = {};
 
 	var validService = function(service) {
-		var tags = service.tags;
+		var tags = service.tags || [];
+		if (!tags.length && opts.default) return true;
 		return [me.id].concat(me.tags).some(function(tag) {
 			return tags.indexOf(tag) > -1;
 		});
