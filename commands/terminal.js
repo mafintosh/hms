@@ -180,7 +180,7 @@ module.exports = function(opts) {
 		} else {
 			service.docks = service.docks.slice(0, service.limit);
 			validDocks = deck.shuffle(validDocks);
-			for (var i = 0; i < validDocks && service.docks.length < service.limit; i++) {
+			for (var i = 0; i < validDocks.length && service.docks.length < service.limit; i++) {
 				if (service.docks.indexOf(validDocks[i]) === -1) service.docks.push(validDocks[i]);
 			}
 		}
