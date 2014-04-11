@@ -233,7 +233,7 @@ module.exports = function(opts) {
 			if (db.has(id)) return cb(new Error('Service already exist'));
 			if (!/^[a-zA-Z0-9\-\.]+$/.test(id)) return cb(new Error('Service name should be alphanumericish'));
 			log(id, 'adding new service');
-			opts.env = xtend(opts.env, defaultEnv);
+			opts.env = xtend(defaultEnv, opts.env);
 			save(id, opts, cb);
 		});
 
