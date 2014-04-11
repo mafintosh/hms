@@ -183,6 +183,7 @@ tab('terminal')
 	('--dock', '-d')
 	('--db', '@file')
 	('--tag', '-t')
+	('--env', '-e')
 	(function(opts) {
 		require('../commands/terminal')(opts);
 	});

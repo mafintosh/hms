@@ -43,6 +43,15 @@ module.exports = function(opts) {
 	var subs = subscriptions();
 	var docks = [];
 
+	var defaultEnv = {};
+
+	[].concat(opts.env || []).forEach(function(env) {
+		var parts = env.trim().split(/=/);
+		var key = parts[0];
+		var val = parts[1];
+		if (key && val) defaultEnv[key.trim()] = val.trim();
+	});
+
 	var ondock = function(protocol, handshake) {
 		protocol.id = handshake.id;
 		handshake.protocol = protocol;
@@ -224,6 +233,7 @@ module.exports = function(opts) {
 			if (db.has(id)) return cb(new Error('Service already exist'));
 			if (!/^[a-zA-Z0-9\-\.]+$/.test(id)) return cb(new Error('Service name should be alphanumericish'));
 			log(id, 'adding new service');
+			opts.env = xtend(opts.env, defaultEnv);
 			save(id, opts, cb);
 		});
 
