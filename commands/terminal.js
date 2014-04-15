@@ -222,7 +222,7 @@ module.exports = function(opts) {
 			}, function(err) {
 				if (err || service.stopped) return purge(err);
 				forEach(selected, function(dock, next) {
-					dock.protocol.start(dock.id, next);
+					dock.protocol.start(service.id, next);
 				}, purge);
 			});
 		});
