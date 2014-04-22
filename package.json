@@ -1,6 +1,6 @@
 {
   "name": "hms",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "Work in progress. Ship all kinds of services",
   "repository": "git://github.com/mafintosh/hms.git",
   "dependencies": {
