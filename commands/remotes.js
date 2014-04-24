@@ -2,9 +2,10 @@ var xtend = require('xtend');
 var knownHosts = require('known-hosts');
 var read = require('read');
 var path = require('path');
+var select = require('select-keys');
+var fs = require('fs');
 var ui = require('../lib/ui');
 var remotes = require('../lib/remotes');
-var select = require('select-keys');
 var client = require('../');
 
 var isKnownHost = function(host, fingerprint) {
@@ -42,7 +43,8 @@ module.exports = function(cmd, remote, url, opts) {
 	var add = function() {
 		if (!remote) return ui.error('Remote is required');
 		if (!url) return ui.error('Remote url is required');
-		if (conf.key && conf.key.indexOf(path.resolve('/')) !== 0) conf.key = path.join(process.cwd(), conf.key);
+		if (conf.key && !fs.existsSync(conf.key)) return ui.error('Key file does not exist');
+		if (conf.key) conf.key = fs.realpathSync(conf.key);
 
 		var oldFingerprint = conf.fingerprint;
 		delete conf.fingerprint;
