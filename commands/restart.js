@@ -7,16 +7,17 @@ module.exports = function(remote, id, opts) {
 
 	var c = client(remote);
 
-	c.subscribe(id, function(err) {
-		if (err) return ui.error(err);
-	});
+	if (opts.log !== false) {
+		c.subscribe(id, function(err) {
+			if (err) return ui.error(err);
+		});
+	}
 
 	var unspin = ui.spin('Restarting', id);
 	c.restart(id, function(err) {
 		unspin(err);
 
 		if (opts.log === false) return;
-		console.log('\nForwarding', id, 'output\n');
 		logStream(c).pipe(process.stdout);
 	});
 };
