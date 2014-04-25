@@ -61,7 +61,7 @@ var readSync = function(filename) {
 module.exports = function(remote, id, opts) {
 	if (!id) return ui.error('Service name required');
 
-	var repo = !opts.stdin && findGitRepository();
+	var repo = !opts.stdin && !opts.url && findGitRepository();
 	if (repo && repo !== process.cwd() && !opts.force) return ui.error('You are in a git repo but not at the root. Use --force to ignore');
 
 	var ignore = opts.ignore === false ? noop : compileIgnore(readSync('.hmsignore') || readSync('.gitignore') || '');
@@ -104,6 +104,15 @@ module.exports = function(remote, id, opts) {
 				unspin();
 				onupload();
 			});
+		});
+	};
+
+	var onurl = function() {
+		var unspin = ui.spin('Downloading tarball from', opts.url);
+		pump(request(opts.url), fs.createWriteStream(tmp), function(err) {
+			if (err) return unspin(err);
+			unspin();
+			onopen();
 		});
 	};
 
@@ -209,6 +218,7 @@ module.exports = function(remote, id, opts) {
 		});
 	};
 
+	if (opts.url) return onurl();
 	if (opts.stdin) return onstdin();
 	if (rev || !repo) return ontar();
 

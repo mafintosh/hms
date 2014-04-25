@@ -154,6 +154,7 @@ tab('deploy')
 	('--revision', '-r')
 	('--no-log')
 	('--stdin')
+	('--url')
 	(remotes)
 	(ids)
 	(function(remote, id, opts) {

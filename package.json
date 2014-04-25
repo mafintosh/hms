@@ -32,7 +32,8 @@
     "tar-fs": "^0.2.1",
     "split": "^0.3.0",
     "hms-protocol": "^1.2.2",
-    "deck": "0.0.4"
+    "deck": "0.0.4",
+    "request": "^2.34.0"
   },
   "main": "./lib/client.js",
   "bin": {
