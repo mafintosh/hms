@@ -153,6 +153,7 @@ tab('sync')
 tab('deploy')
 	('--revision', '-r')
 	('--no-log')
+	('--stdin')
 	(remotes)
 	(ids)
 	(function(remote, id, opts) {
