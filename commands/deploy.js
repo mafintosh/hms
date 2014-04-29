@@ -61,169 +61,185 @@ var readSync = function(filename) {
 module.exports = function(remote, id, opts) {
 	if (!id) return ui.error('Service name required');
 
-	var repo = !opts.stdin && !opts.url && findGitRepository();
-	if (repo && repo !== process.cwd() && !opts.force) return ui.error('You are in a git repo but not at the root. Use --force to ignore');
+	var retry = function() {
+		var repo = !opts.stdin && !opts.url && findGitRepository();
+		if (repo && repo !== process.cwd() && !opts.force) return ui.error('You are in a git repo but not at the root. Use --force to ignore');
 
-	var ignore = opts.ignore === false ? noop : compileIgnore(readSync('.hmsignore') || readSync('.gitignore') || '');
-	var c = client(remote);
+		var ignore = opts.ignore === false ? noop : compileIgnore(readSync('.hmsignore') || readSync('.gitignore') || '');
+		var c = client(remote);
 
-	var tmp = path.join(os.tmpDir(), 'hms-'+id+'.tgz');
-	var rev = typeof opts.revision === 'string' ? opts.revision : undefined;
-	var then = Date.now();
+		var tmp = path.join(os.tmpDir(), 'hms-'+id+'.tgz');
+		var rev = typeof opts.revision === 'string' ? opts.revision : undefined;
+		var then = Date.now();
 
-	c.open(); // lets just open the conn right away to speed up things
+		c.open(); // lets just open the conn right away to speed up things
 
-	console.log('Deploying', path.basename(process.cwd()), 'to', id+'\n');
+		console.log('Deploying', path.basename(process.cwd()), 'to', id+'\n');
 
-	var uploadSucceded = false;
+		var uploadSucceded = false;
 
-	var uploading = function(pct, transferred, speed) {
-		if (uploadSucceded) return;
-		uploadSucceded = pct === 100;
+		var uploading = function(pct, transferred, speed) {
+			if (uploadSucceded) return;
+			uploadSucceded = pct === 100;
 
-		if (!ui.TTY && uploadSucceded) return console.log(ui.SUCCESS, 'Uploading', id);
-		if (!ui.TTY) return;
+			if (!ui.TTY && uploadSucceded) return console.log(ui.SUCCESS, 'Uploading', id);
+			if (!ui.TTY) return;
 
-		var arrow = Array(Math.floor(WS.length * pct/100)).join('=')+'>';
-		var bar = '['+arrow+WS.slice(arrow.length)+']';
+			var arrow = Array(Math.floor(WS.length * pct/100)).join('=')+'>';
+			var bar = '['+arrow+WS.slice(arrow.length)+']';
 
-		log((uploadSucceded ? ui.SUCCESS : ui.PROGRESS), 'Uploading', id, chalk.cyan(bar), pretty(transferred), '('+pretty(speed)+'/s) ');
-	};
+			log((uploadSucceded ? ui.SUCCESS : ui.PROGRESS), 'Uploading', id, chalk.cyan(bar), pretty(transferred), '('+pretty(speed)+'/s) ');
+		};
 
-	var onuploaderror = function(err) {
-		(ui.TTY ? log : console.log)(ui.ERROR, 'Uploading', id, '('+err.message+') ');
-		process.exit(1);
-	};
+		var onuploaderror = function(err) {
+			(ui.TTY ? log : console.log)(ui.ERROR, 'Uploading', id, '('+err.message+') ');
+			process.exit(1);
+		};
 
-	var onopen = function() {
-		var unspin = ui.spin('Connecting to remote');
-		c.open(function(err) {
-			if (err) return unspin(err);
-			c.subscribe(id, function(err) {
+		var onopen = function() {
+			var unspin = ui.spin('Connecting to remote');
+			c.open(function(err) {
+				if (err) return unspin(err);
+				c.subscribe(id, function(err) {
+					if (err) return unspin(err);
+					unspin();
+					onupload();
+				});
+			});
+		};
+
+		var onurl = function() {
+			var unspin = ui.spin('Downloading tarball from', opts.url);
+			pump(request(opts.url), fs.createWriteStream(tmp), function(err) {
 				if (err) return unspin(err);
 				unspin();
-				onupload();
+				onopen();
 			});
-		});
-	};
+		};
 
-	var onurl = function() {
-		var unspin = ui.spin('Downloading tarball from', opts.url);
-		pump(request(opts.url), fs.createWriteStream(tmp), function(err) {
-			if (err) return unspin(err);
-			unspin();
-			onopen();
-		});
-	};
+		var onstdin = function() {
+			var unspin = ui.spin('Reading tarball from stdin');
+			pump(process.stdin, fs.createWriteStream(tmp), function(err) {
+				if (err) return unspin(err);
+				unspin();
+				onopen();
+			});
+		};
 
-	var onstdin = function() {
-		var unspin = ui.spin('Reading tarball from stdin');
-		pump(process.stdin, fs.createWriteStream(tmp), function(err) {
-			if (err) return unspin(err);
-			unspin();
-			onopen();
-		});
-	};
+		var ontar = function() {
+			var unspin = ui.spin('Creating tarball');
+			pump(tar.pack('.', {ignore:ignore}), zlib.createGzip(), fs.createWriteStream(tmp), function(err) {
+				if (err) return unspin(err);
+				unspin();
+				onopen();
+			});
+		};
 
-	var ontar = function() {
-		var unspin = ui.spin('Creating tarball');
-		pump(tar.pack('.', {ignore:ignore}), zlib.createGzip(), fs.createWriteStream(tmp), function(err) {
-			if (err) return unspin(err);
-			unspin();
-			onopen();
-		});
-	};
+		var onupload = function() {
+			if (ui.TTY) log(ui.PROGRESS, 'Uploading', id, chalk.cyan('[>'+WS.slice(1)+'] '));
+			else console.log(ui.PROGRESS, 'Uploading', id);
 
-	var onupload = function() {
-		if (ui.TTY) log(ui.PROGRESS, 'Uploading', id, chalk.cyan('[>'+WS.slice(1)+'] '));
-		else console.log(ui.PROGRESS, 'Uploading', id);
+			var deploy = c.deploy(id, {revision:rev});
+			var unspin;
 
-		var deploy = c.deploy(id, {revision:rev});
-		var unspin;
-
-		var prog = progress({
-			time: 250,
-			length: fs.statSync(tmp).size
-		});
-
-		prog.on('progress', function(data) {
-			uploading(data.percentage, data.transferred, data.speed);
-		});
-
-		deploy.on('building', function(stream) {
-			var nl = split();
-			var first = true;
-			var wasEmpty = false;
-
-			nl.on('data', function(data) {
-				var isEmpty = !unansi(data).trim();
-
-				if (first && isEmpty) return;
-				if (first) console.log();
-				first = false;
-
-				if (isEmpty && !wasEmpty) return wasEmpty = true;
-
-				wasEmpty = false;
-				ui.indent(data);
+			var prog = progress({
+				time: 250,
+				length: fs.statSync(tmp).size
 			});
 
-			nl.on('end', function() {
-				if (!first) console.log();
+			prog.on('progress', function(data) {
+				uploading(data.percentage, data.transferred, data.speed);
 			});
 
-			stream.pipe(nl);
-		});
+			deploy.on('building', function(stream) {
+				var nl = split();
+				var first = true;
+				var wasEmpty = false;
 
-		deploy.on('syncing', function() {
-			if (unspin) unspin();
-			unspin = ui.spin('Syncing', id);
-		});
+				nl.on('data', function(data) {
+					var isEmpty = !unansi(data).trim();
 
-		var logs;
+					if (first && isEmpty) return;
+					if (first) console.log();
+					first = false;
 
-		deploy.on('restarting', function() {
-			if (unspin) unspin();
-			c.subscribe(id);
-			unspin = ui.spin('Restarting', id);
-			logs = logStream(c);
-		});
+					if (isEmpty && !wasEmpty) return wasEmpty = true;
 
-		deploy.on('success', function() {
-			c.ps(function(err, ps) {
-				if (unspin) unspin(err);
-				if (!logs || opts.log === false) return process.exit(0);
-
-				var running = ps.some(function(dock) {
-					return (dock.list || []).some(function(proc) {
-						return proc.status !== 'stopped' && proc.id === id;
-					});
+					wasEmpty = false;
+					ui.indent(data);
 				});
 
-				if (!running) return ui.error('Service does not match any docks. Exiting...\n');
+				nl.on('end', function() {
+					if (!first) console.log();
+				});
 
-				console.log('\nForwarding', id, 'output\n');
-				logs.pipe(process.stdout);
+				stream.pipe(nl);
 			});
-		});
 
-		pump(fs.createReadStream(tmp), prog, deploy, function(err) {
-			if (err) return onuploaderror(err);
-
-			deploy.on('error', function(err) {
-				if (unspin) return unspin(err);
-				ui.error(err);
-				process.exit(1);
+			deploy.on('syncing', function() {
+				if (unspin) unspin();
+				unspin = ui.spin('Syncing', id);
 			});
+
+			var logs;
+
+			deploy.on('restarting', function() {
+				if (unspin) unspin();
+				c.subscribe(id);
+				unspin = ui.spin('Restarting', id);
+				logs = logStream(c);
+			});
+
+			deploy.on('success', function() {
+				c.ps(function(err, ps) {
+					if (unspin) unspin(err);
+					if (!logs || opts.log === false) return process.exit(0);
+
+					var running = ps.some(function(dock) {
+						return (dock.list || []).some(function(proc) {
+							return proc.status !== 'stopped' && proc.id === id;
+						});
+					});
+
+					if (!running) return ui.error('Service does not match any docks. Exiting...\n');
+
+					console.log('\nForwarding', id, 'output\n');
+					logs.pipe(process.stdout);
+				});
+			});
+
+			pump(fs.createReadStream(tmp), prog, deploy, function(err) {
+				if (err) return onuploaderror(err);
+
+				deploy.on('error', function(err) {
+					if (unspin) return unspin(err);
+					ui.error(err);
+					process.exit(1);
+				});
+			});
+		};
+
+		if (opts.url) return onurl();
+		if (opts.stdin) return onstdin();
+		if (rev || !repo) return ontar();
+
+		gitDescribe(function(desc) {
+			rev = desc;
+			ontar();
 		});
 	};
 
-	if (opts.url) return onurl();
-	if (opts.stdin) return onstdin();
-	if (rev || !repo) return ontar();
+	if (opts.retry) {
+		var tries = 5;
+		var exit = process.exit;
 
-	gitDescribe(function(desc) {
-		rev = desc;
-		ontar();
-	});
+		process.exit = function(code) {
+			if (!code) return exit(code);
+			if (!--tries) return exit(code);
+			console.log('Command failed! Retrying...');
+			setTimeout(retry, 1000);
+		};
+	}
+
+	retry();
 };

@@ -155,6 +155,7 @@ tab('deploy')
 	('--no-log')
 	('--stdin')
 	('--url')
+	('--retry')
 	(remotes)
 	(ids)
 	(function(remote, id, opts) {
