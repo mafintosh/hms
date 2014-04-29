@@ -192,6 +192,7 @@ module.exports = function(remote, id, opts) {
 
 			deploy.on('success', function() {
 				c.ps(function(err, ps) {
+					if (unspin && err) return unspin(err);
 					if (unspin) unspin(err);
 					if (!logs || opts.log === false) return process.exit(0);
 
@@ -235,8 +236,8 @@ module.exports = function(remote, id, opts) {
 
 		process.exit = function(code) {
 			if (!code) return exit(code);
-			if (!--tries) return exit(code);
-			console.log('Command failed! Retrying...');
+			if (!tries--) return exit(code);
+			console.log('\nCommand failed! Retrying '+(5-tries)+'/5 ...\n');
 			setTimeout(retry, 1000);
 		};
 	}
