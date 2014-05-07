@@ -61,7 +61,7 @@ var readSync = function(filename) {
 module.exports = function(remote, id, opts) {
 	if (!id) return ui.error('Service name required');
 
-	var retry = function() {
+	var retry = function(isRetrying) {
 		var repo = !opts.stdin && !opts.url && findGitRepository();
 		if (repo && repo !== process.cwd() && !opts.force) return ui.error('You are in a git repo but not at the root. Use --force to ignore');
 
@@ -119,6 +119,13 @@ module.exports = function(remote, id, opts) {
 
 		var onstdin = function() {
 			var unspin = ui.spin('Reading tarball from stdin');
+
+			if (isRetrying) {
+				unspin();
+				onopen();
+				return;
+			}
+
 			pump(process.stdin, fs.createWriteStream(tmp), function(err) {
 				if (err) return unspin(err);
 				unspin();
@@ -238,7 +245,7 @@ module.exports = function(remote, id, opts) {
 			if (!code) return exit(code);
 			if (!tries--) return exit(code);
 			console.log('\nCommand failed! Retrying '+(5-tries)+'/5 ...\n');
-			setTimeout(retry, 1000);
+			setTimeout(retry.bind(null, true), 1000);
 		};
 	}
 
