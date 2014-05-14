@@ -168,6 +168,12 @@ module.exports = function(opts) {
 		});
 	};
 
+	var arrayish = function(list) {
+		if (!list) return [];
+		if (Array.isArray(list)) return list;
+		return [].concat(list);
+	};
+
 	var sync = function(service, cb) {
 		if (!cb) cb = noop;
 		if (!service.deployed) return cb();
@@ -180,7 +186,7 @@ module.exports = function(opts) {
 				return dock.id;
 			});
 
-		service.docks = (service.docks || []).filter(function(current) {
+		service.docks = arrayish(service.docks).filter(function(current) {
 			return validDocks.indexOf(current) > -1;
 		});
 
