@@ -108,6 +108,15 @@ module.exports = function(remote, id, opts) {
 			});
 		};
 
+		var onfile = function() {
+			var unspin = ui.spin('Extracting tarball from', opts.file);
+			pump(fs.createReadStream(opts.file), fs.createWriteStream(tmp), function(err) {
+				if (err) return unspin(err);
+				unspin();
+				onopen();
+			});
+		};
+
 		var onurl = function() {
 			var unspin = ui.spin('Downloading tarball from', opts.url);
 			pump(request(opts.url), fs.createWriteStream(tmp), function(err) {
@@ -227,6 +236,7 @@ module.exports = function(remote, id, opts) {
 			});
 		};
 
+		if (opts.file) return onfile();
 		if (opts.url) return onurl();
 		if (opts.stdin) return onstdin();
 		if (rev || !repo) return ontar();
