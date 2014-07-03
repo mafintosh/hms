@@ -93,9 +93,9 @@ module.exports = function(remote, opts) {
 	var onmon = function(id, service) {
 		if (!service.start || !service.cwd) return false;
 
-		var env = xtend(service.env);
+		var env = xtend({SERVICE_NAME:id}, service.env);
 		var stale = mons.get(id) || {};
-		var cmd = shell.parse(service.start, service.env);
+		var cmd = shell.parse(service.start, env);
 		var fresh = {command:cmd, cwd:service.cwd, env:env};
 
 		if (JSON.stringify({command:stale.command, cwd:stale.cwd, env:stale.env}) === JSON.stringify(fresh)) return false;
