@@ -6,12 +6,12 @@ var os = require('os');
 
 var remotes = function(word, opts, cb) {
 	if (word.indexOf('@') > -1) return cb(null, '@host');
-	cb(null, rm.list());
+	cb(null, rm(opts.config).list());
 };
 
 var resolve = function(remote, opts) {
 	if (!remote) return require('../lib/ui').error('Remote is required');
-	return require('xtend')(rm.read(remote) || {url:remote}, opts);
+	return require('xtend')(rm(opts.config).read(remote) || {url:remote}, opts);
 };
 
 var help = function() {
@@ -24,7 +24,7 @@ var ids = function(word, opts, cb) {
 	var name = opts._[1];
 
 	var c = client(resolve(opts._[1], opts));
-	var cached = rm.cache(name, 'ids');
+	var cached = rm(opts.config).cache(name, 'ids');
 
 	if (cached) return cb(null, cached);
 
@@ -35,11 +35,12 @@ var ids = function(word, opts, cb) {
 			return service.id;
 		});
 
-		cb(null, rm.cache(name, 'ids', list));
+		cb(null, rm(opts.config).cache(name, 'ids', list));
 	});
 };
 
 tab('*')
+	('--config', '-c', '@file')
 	('--force', '-f')
 	('--key', '-i', '-k', '@file')
 	('--passphrase');
@@ -64,7 +65,7 @@ tab('add')
 	(remotes)
 	(ids)
 	(function(remote, id, opts) {
-		rm.cache(remote, 'ids', null);
+		rm(opts.config).cache(remote, 'ids', null);
 		require('../commands/add')(resolve(remote, opts), id, opts);
 	});
 
@@ -72,7 +73,7 @@ tab('remove')
 	(remotes)
 	(ids)
 	(function(remote, id, opts) {
-		rm.cache(remote, 'ids', null);
+		rm(opts.config).cache(remote, 'ids', null);
 		require('../commands/remove')(resolve(remote, opts), id, opts);
 	});
 
