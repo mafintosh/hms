@@ -16,26 +16,27 @@ var isKnownHost = function(host, fingerprint) {
 };
 
 module.exports = function(cmd, remote, url, opts) {
-	var conf = xtend(remotes.read(remote) || {}, opts);
+	var rems = remotes(opts.config)
+	var conf = xtend(rems.read(remote) || {}, opts);
 
 	var remove = function() {
 		if (!remote) return ui.error('Remote is required');
 
-		var r = remotes.read(remote);
+		var r = rems.read(remote);
 		if (!r) return ui.error('Remote not found');
-		remotes.remove(remote);
+		rems.remove(remote);
 		ui.success('Remote was removed');
 	};
 
 	var list = function() {
-		var l = remotes.list();
+		var l = rems.list();
 
 		if (!l.length) return ui.empty();
 
 		l.forEach(function(name) {
 			ui.tree({
 				label: name,
-				leaf: remotes.read(name)
+				leaf: rems.read(name)
 			});
 		});
 	};
@@ -88,7 +89,7 @@ module.exports = function(cmd, remote, url, opts) {
 				leaf: conf
 			});
 
-			remotes.write(remote, conf);
+			rems.write(remote, conf);
 		});
 	};
 
