@@ -89,8 +89,12 @@ module.exports = function(opts) {
 		rimraf(dir, noop);
 	};
 
-	var forEach = function(list, fn, cb) {
+	var forEach = function(list, route, fn, cb) {
 		cb = once(cb || noop);
+
+		list = list.filter(function(dock) {
+			return matchDock(route, dock);
+		});
 
 		var result = [];
 		var missing = list.length;
@@ -133,7 +137,7 @@ module.exports = function(opts) {
 		db.put(id, service, cb);
 	};
 
-	var onstatuschange = function(id, status, cb) {
+	var onstatuschange = function(id, status, route, cb) {
 		if (!db.has(id)) return cb(new Error('Service not found'));
 
 		var service = db.get(id);
@@ -151,12 +155,19 @@ module.exports = function(opts) {
 		db.put(id, service, function(err) {
 			if (err) return cb(err);
 			log(id, 'sending', status, 'to docks');
-			forEach(docks, function(dock, next) {
+			forEach(docks, route, function(dock, next) {
 				dock.protocol.update(id, upd, function(err) {
 					if (err) return next(err);
 					dock.protocol[status](id, next);
 				});
 			}, cb);
+		});
+	};
+
+	var matchDock = function(route, dock) {
+		if (!route) return true;
+		return [dock.id].concat(dock.tags || []).some(function(tag) {
+			return route === tag;
 		});
 	};
 
@@ -174,7 +185,7 @@ module.exports = function(opts) {
 		return [].concat(list);
 	};
 
-	var sync = function(service, cb) {
+	var sync = function(service, route, cb) {
 		if (!cb) cb = noop;
 		if (!service.deployed) return cb();
 
@@ -207,7 +218,7 @@ module.exports = function(opts) {
 				return service.docks.indexOf(dock.id) === -1;
 			});
 
-			forEach(purged, function(dock, next) {
+			forEach(purged, null, function(dock, next) {
 				dock.protocol.remove(service.id, next);
 			}, cb);
 		};
@@ -223,7 +234,7 @@ module.exports = function(opts) {
 
 		save(service.id, service, function(err) {
 			if (err) return cb(err);
-			forEach(selected, function(dock, next) {
+			forEach(selected, route, function(dock, next) {
 				dock.protocol.sync(service.id, service, next);
 			}, function(err) {
 				if (err || service.stopped) return purge(err);
@@ -234,7 +245,7 @@ module.exports = function(opts) {
 		});
 	};
 
-	var onclient = function(protocol) {
+	var onclient = function(protocol, handshake) {
 		protocol.on('add', function(id, opts, cb) {
 			if (db.has(id)) return cb(new Error('Service already exist'));
 			if (!/^[a-zA-Z0-9\-\.]+$/.test(id)) return cb(new Error('Service name should be alphanumericish'));
@@ -251,7 +262,7 @@ module.exports = function(opts) {
 
 		protocol.on('remove', function(id, cb) {
 			log(id, 'removing service');
-			forEach(docks, function(dock, next) {
+			forEach(docks, handshake.route, function(dock, next) {
 				dock.protocol.remove(id, next);
 			}, function(err) {
 				if (err) return cb(err);
@@ -276,23 +287,23 @@ module.exports = function(opts) {
 			if (!service) service = db.get(id);
 			if (!service) return cb(new Error('Service not found'));
 			log(id, 'syncing build to docks');
-			sync(service, cb);
+			sync(service, handshake.route, cb);
 		});
 
 		protocol.on('restart', function(id, cb) {
-			onstatuschange(id, 'restart', cb);
+			onstatuschange(id, 'restart', handshake.route, cb);
 		});
 
 		protocol.on('start', function(id, cb) {
-			onstatuschange(id, 'start', cb);
+			onstatuschange(id, 'start', handshake.route, cb);
 		});
 
 		protocol.on('stop', function(id, cb) {
-			onstatuschange(id, 'stop', cb);
+			onstatuschange(id, 'stop', handshake.route, cb);
 		});
 
 		protocol.on('ps', function(cb) {
-			forEach(docks, function(dock, next) {
+			forEach(docks, handshake.route, function(dock, next) {
 				dock.protocol.ps(next);
 			}, cb);
 		});
@@ -437,7 +448,7 @@ module.exports = function(opts) {
 				return cb(null, reply);
 			}
 			if (handshake.type === 'client') {
-				onclient(p);
+				onclient(p, handshake);
 				return cb(null, reply);
 			}
 
