@@ -11,7 +11,14 @@ var remotes = function(word, opts, cb) {
 
 var resolve = function(remote, opts) {
 	if (!remote) return require('../lib/ui').error('Remote is required');
-	return require('xtend')(rm(opts.config).read(remote) || {url:remote}, opts);
+
+	var route;
+	if (remote.indexOf('/') > -1) {
+		route = remote.split('/')[1];
+		remote = remote.split('/')[0];
+	}
+
+	return require('xtend')({route:route}, rm(opts.config).read(remote) || {url:remote}, opts);
 };
 
 var help = function() {
