@@ -14,6 +14,7 @@ Available commands are:
   restart      restart service processes
   log          tail service logs
   sync         force a sync
+  status       exit with code != 0 if service crashed
 
 Use the following commands to setup a remote
   dock         start a service dock
