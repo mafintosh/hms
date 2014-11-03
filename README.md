@@ -13,7 +13,7 @@ Afterwards you should have an command line tool called `hms`.
 First ssh to a remote server and install hms.
 Then start up a terminal.
 
-	hms terminal # starts both a terminal and a dock
+	hms terminal
 
 In a new folder start the dock (or multiple docks as seperate processes). The dock will run your apps
 
