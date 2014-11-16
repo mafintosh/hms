@@ -119,7 +119,7 @@ module.exports = function(opts) {
 	subs.on('subscribe', function(id, protocol, count) {
 		if (count > 1) return;
 		log(id, 'subscribing to service events and logs');
-		forEach(docks, function(dock, next) {
+		forEach(docks, null, function(dock, next) {
 			dock.protocol.subscribe(id, next);
 		});
 	});
@@ -127,7 +127,7 @@ module.exports = function(opts) {
 	subs.on('unsubscribe', function(id, protocol, count) {
 		if (count) return;
 		log(id, 'unsubscribing to service events and logs');
-		forEach(docks, function(dock, next) {
+		forEach(docks, null, function(dock, next) {
 			dock.protocol.unsubscribe(id, next);
 		});
 	});
@@ -238,7 +238,7 @@ module.exports = function(opts) {
 				dock.protocol.sync(service.id, service, next);
 			}, function(err) {
 				if (err || service.stopped) return purge(err);
-				forEach(selected, function(dock, next) {
+				forEach(selected, null, function(dock, next) {
 					dock.protocol.start(service.id, next);
 				}, purge);
 			});
