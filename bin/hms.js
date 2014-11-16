@@ -141,6 +141,7 @@ tab('stop')
 
 tab('restart')
 	('--no-log')
+	('--no-sync')
 	(remotes)
 	(ids)
 	(function(remote, id, opts) {
