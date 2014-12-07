@@ -1,6 +1,6 @@
 var log = require('single-line-log');
 var unansi = require('ansi-stripper');
-var split = require('split');
+var split = require('split2');
 var fs = require('fs');
 var zlib = require('zlib');
 var tar = require('tar-fs');
@@ -168,28 +168,25 @@ module.exports = function(remote, id, opts) {
 			});
 
 			deploy.on('building', function(stream) {
-				var nl = split();
 				var first = true;
 				var wasEmpty = false;
 
-				nl.on('data', function(data) {
-					var isEmpty = !unansi(data).trim();
+				stream.pipe(split())
+					.on('data', function(data) {
+						var isEmpty = !unansi(data).trim();
 
-					if (first && isEmpty) return;
-					if (first) console.log();
-					first = false;
+						if (first && isEmpty) return;
+						if (first) console.log();
+						first = false;
 
-					if (isEmpty && !wasEmpty) return wasEmpty = true;
+						if (isEmpty && !wasEmpty) return wasEmpty = true;
 
-					wasEmpty = false;
-					ui.indent(data);
-				});
-
-				nl.on('end', function() {
-					if (!first) console.log();
-				});
-
-				stream.pipe(nl);
+						wasEmpty = false;
+						ui.indent(data);
+					})
+					.on('end', function() {
+						if (!first) console.log();
+					});
 			});
 
 			deploy.on('syncing', function() {
