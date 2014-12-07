@@ -49,5 +49,6 @@
   "homepage": "https://github.com/mafintosh/hms",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
-  }
+  },
+  "author": "Mathias Buus"
 }
