@@ -15,6 +15,8 @@ var thunky = require('thunky');
 var deck = require('deck');
 var once = require('once');
 var proc = require('child_process');
+var split = require('split2');
+var hooks = require('hook-scripts')();
 var protocol = require('../lib/protocol');
 var subscriptions = require('../lib/subscriptions');
 var pkg = require('../package.json');
@@ -291,7 +293,23 @@ module.exports = function(opts) {
 		});
 
 		protocol.on('restart', function(id, cb) {
-			onstatuschange(id, 'restart', handshake.route, cb);
+			onstatuschange(id, 'restart', handshake.route, function(err) {
+				if (err) return cb(err);
+
+				log(id, 'preparing to run post-restart hook');
+				hooks('post-restart', function(hook) {
+					if (!hook) return cb();
+					log(id, 'running post-restart hook');
+					hook.on('close', function(code) {
+						var msg = 'post-restart hook exited with code: ' + code;
+						log(id, msg);
+						if (code) return cb(new Error(msg));
+						cb();
+					});
+					hook.stdout.pipe(split()).on('data', log.bind(null, id));
+					hook.stderr.pipe(split()).on('data', log.bind(null, id));
+				});
+			});
 		});
 
 		protocol.on('start', function(id, cb) {
@@ -373,14 +391,25 @@ module.exports = function(opts) {
 			});
 		};
 
-		log(id, 'receiving tarball');
-		res.setHeader('Trailer', 'X-Status');
-		pump(req, zlib.createGunzip(), tar.extract(cwd, {readable:true}), function(err) {
-			if (err) return onerror(500, err.message);
+		var preDeployHook = function() {
+			log(id, 'preparing to run pre-deploy hook');
+			hooks('pre-deploy', function(hook) {
+				if (!hook) return buildStep();
+				log(id, 'running pre-deploy hook');
+				hook.on('close', function(code) {
+					var msg = 'pre-deploy hook exited with code: ' + code;
+					log(id, msg);
+					if (code) return onerror(500, msg);
+					buildStep();
+				});
+				hook.stdout.pipe(split()).on('data', log.bind(null, id));
+				hook.stderr.pipe(split()).on('data', log.bind(null, id));
+			});
+		};
 
+		var buildStep = function() {
 			var service = db.get(id);
 
-			if (!service) return onerror(404, 'Service not found');
 			if (!service.build) return ondone(204);
 
 			var build = proc.spawn('/bin/sh', ['-c', service.build, path.join(cwd, 'build.sh'), id], {
@@ -400,6 +429,15 @@ module.exports = function(opts) {
 				if (!db.has(id)) return onerror(404);
 				ondone(200);
 			});
+		};
+
+		log(id, 'receiving tarball');
+		res.setHeader('Trailer', 'X-Status');
+		pump(req, zlib.createGunzip(), tar.extract(cwd, {readable:true}), function(err) {
+			if (err) return onerror(500, err.message);
+			var service = db.get(id);
+			if (!service) return onerror(404, 'Service not found');
+			preDeployHook();
 		});
 	});
 
