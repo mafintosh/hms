@@ -1,3 +1,4 @@
+var util = require('util');
 var http = require('http');
 var root = require('root');
 var flat = require('flat-file-db');
@@ -299,6 +300,7 @@ module.exports = function(opts) {
 				log(id, 'preparing to run post-restart hook');
 				hooks('post-restart', function(hook) {
 					if (!hook) return cb();
+					cb = once(cb);
 					log(id, 'running post-restart hook');
 					hook.on('close', function(code) {
 						var msg = 'post-restart hook exited with code: ' + code;
@@ -306,6 +308,7 @@ module.exports = function(opts) {
 						if (code) return cb(new Error(msg));
 						cb();
 					});
+					hook.on('error', cb);
 					hook.stdout.pipe(split()).on('data', log.bind(null, id));
 					hook.stderr.pipe(split()).on('data', log.bind(null, id));
 				});
@@ -395,13 +398,16 @@ module.exports = function(opts) {
 			log(id, 'preparing to run pre-deploy hook');
 			hooks('pre-deploy', function(hook) {
 				if (!hook) return buildStep();
-				log(id, 'running pre-deploy hook');
-				hook.on('close', function(code) {
+				var done = once(function(code) {
+					if (util.isError(code)) return onerror(500, code.message);
 					var msg = 'pre-deploy hook exited with code: ' + code;
 					log(id, msg);
 					if (code) return onerror(500, msg);
 					buildStep();
 				});
+				log(id, 'running pre-deploy hook');
+				hook.on('close', done);
+				hook.on('error', done);
 				hook.stdout.pipe(split()).on('data', log.bind(null, id));
 				hook.stderr.pipe(split()).on('data', log.bind(null, id));
 			});
