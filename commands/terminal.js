@@ -298,7 +298,7 @@ module.exports = function(opts) {
 				if (err) return cb(err);
 
 				log(id, 'preparing to run post-restart hook');
-				hooks('post-restart', function(hook) {
+				hooks('post-restart', [id], function(hook) {
 					if (!hook) return cb();
 					cb = once(cb);
 					log(id, 'running post-restart hook');
@@ -396,7 +396,7 @@ module.exports = function(opts) {
 
 		var preDeployHook = function() {
 			log(id, 'preparing to run pre-deploy hook');
-			hooks('pre-deploy', function(hook) {
+			hooks('pre-deploy', [id], function(hook) {
 				if (!hook) return buildStep();
 				var done = once(function(code) {
 					if (util.isError(code)) return onerror(500, code.message);
