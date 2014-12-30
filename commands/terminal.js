@@ -297,8 +297,10 @@ module.exports = function(opts) {
 			onstatuschange(id, 'restart', handshake.route, function(err) {
 				if (err) return cb(err);
 
+				var service = db.get(id);
+
 				log(id, 'checking for post-restart hook');
-				hooks('post-restart', [id], function(hook) {
+				hooks('post-restart', [id, service.revision], function(hook) {
 					if (!hook) return cb();
 					log(id, 'running post-restart hook');
 					cb = once(cb);
@@ -396,7 +398,7 @@ module.exports = function(opts) {
 
 		var preDeployHook = function() {
 			log(id, 'checking for pre-deploy hook');
-			hooks('pre-deploy', [id], function(hook) {
+			hooks('pre-deploy', [id, req.query.revision], function(hook) {
 				if (!hook) return buildStep();
 				log(id, 'running pre-deploy hook');
 				var done = once(function(code) {
