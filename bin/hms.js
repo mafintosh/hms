@@ -208,6 +208,11 @@ tab('terminal')
 		require('../commands/terminal')(opts);
 	});
 
+tab('doctor')
+	(function(opts) {
+		require('../commands/doctor')(opts);
+	});
+
 tab()
 	('--version', '-v')
 	(function(opts) {
