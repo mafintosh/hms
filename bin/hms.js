@@ -117,6 +117,13 @@ tab('ps')
 		require('../commands/ps')(resolve(remote, opts), id, opts);
 	});
 
+tab('info')
+	(remotes)
+	(ids)
+	(function(remote, id, opts) {
+		require('../commands/info')(resolve(remote, opts), id, opts);
+	});
+
 tab('status')
 	(remotes)
 	(ids)
