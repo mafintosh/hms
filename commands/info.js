@@ -48,12 +48,21 @@ module.exports = function(remote, id, opts) {
 					})
 				;
 			})
-
-			leaf.ps = processes;
 			
+			var nodes = Object.keys(processes).sort().map(function(id) {
+				return {
+					label: id,
+					leaf: processes[id]
+				};
+			});
+
+			nodes.unshift({
+				leaf: leaf
+			});
+
 			ui.tree({
 				label: service.id,
-				leaf: leaf
+				nodes: nodes
 			});
 		});
 	});
