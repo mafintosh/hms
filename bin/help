@@ -8,6 +8,7 @@ Available commands are:
   remove       remove and stop a service
   deploy       deploy cwd to your service
   tarball      fetch the service as a tgz file
+  info         print detailed service info
   list         lists available services
   start        start service processes
   stop         stop service processes
