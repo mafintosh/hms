@@ -4,6 +4,22 @@ var tab = require('tabalot');
 var rm = require('../lib/remotes');
 var os = require('os');
 
+var path = require('path')
+var fs = require('fs')
+
+var getPackageName = function() {
+    var package = path.join(process.cwd(), 'package.json')
+    if (fs.existsSync(package)) {
+        try {
+            var content = fs.readFileSync(package)
+            return JSON.parse(content).name
+        }
+        catch(err) {}
+    }
+
+    return undefined;
+}
+
 var remotes = function(word, opts, cb) {
 	if (word.indexOf('@') > -1) return cb(null, '@host');
 	cb(null, rm(opts.config).list());
@@ -72,6 +88,7 @@ tab('add')
 	(remotes)
 	(ids)
 	(function(remote, id, opts) {
+		id = id || getPackageName()
 		rm(opts.config).cache(remote, 'ids', null);
 		require('../commands/add')(resolve(remote, opts), id, opts);
 	});
@@ -80,6 +97,7 @@ tab('remove')
 	(remotes)
 	(ids)
 	(function(remote, id, opts) {
+		id = id || getPackageName()
 		rm(opts.config).cache(remote, 'ids', null);
 		require('../commands/remove')(resolve(remote, opts), id, opts);
 	});
@@ -99,6 +117,7 @@ tab('update')
 	(remotes)
 	(ids)
 	(function(remote, id, opts) {
+		id = id || getPackageName()
 		require('../commands/update')(resolve(remote, opts), id, opts);
 	});
 
@@ -121,6 +140,7 @@ tab('info')
 	(remotes)
 	(ids)
 	(function(remote, id, opts) {
+		id = id || getPackageName()
 		require('../commands/info')(resolve(remote, opts), id, opts);
 	});
 
@@ -136,6 +156,7 @@ tab('start')
 	(remotes)
 	(ids)
 	(function(remote, id, opts) {
+		id = id || getPackageName()
 		require('../commands/start')(resolve(remote, opts), id, opts);
 	});
 
@@ -143,6 +164,7 @@ tab('stop')
 	(remotes)
 	(ids)
 	(function(remote, id, opts) {
+		id = id || getPackageName()
 		require('../commands/stop')(resolve(remote, opts), id, opts);
 	});
 
@@ -152,6 +174,7 @@ tab('restart')
 	(remotes)
 	(ids)
 	(function(remote, id, opts) {
+		id = id || getPackageName()
 		require('../commands/restart')(resolve(remote, opts), id, opts);
 	});
 
@@ -170,6 +193,7 @@ tab('sync')
 	(remotes)
 	(ids)
 	(function(remote, id, opts) {
+		id = id || getPackageName()
 		require('../commands/sync')(resolve(remote, opts), id, opts);
 	});
 
@@ -183,6 +207,7 @@ tab('deploy')
 	(remotes)
 	(ids)
 	(function(remote, id, opts) {
+		id = id || getPackageName()
 		require('../commands/deploy')(resolve(remote, opts), id, opts);
 	});
 
@@ -191,6 +216,7 @@ tab('tarball')
 	(remotes)
 	(ids)
 	(function(remote, id, opts) {
+		id = id || getPackageName()
 		require('../commands/tarball')(resolve(remote, opts), id, opts);
 	});
 
