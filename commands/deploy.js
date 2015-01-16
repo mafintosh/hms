@@ -11,10 +11,10 @@ var pump = require('pump');
 var proc = require('child_process');
 var pretty = require('prettysize');
 var chalk = require('chalk');
-var minimatch = require('minimatch');
 var client = require('../');
 var ui = require('../lib/ui');
 var logStream = require('../lib/log-stream');
+var ignoreFile = require('ignore-file');
 
 var WS = '                    ';
 var noop = function() {};
@@ -36,28 +36,6 @@ var gitDescribe = function(cb) {
 	});
 };
 
-var compileIgnore = function(str) {
-	var patterns = str.trim().split('\n')
-		.concat('.git', '.svn', '.hg', '.*.swp')
-		.map(function(pattern) {
-			return minimatch.makeRe(pattern);
-		})
-		.filter(function(pattern) {
-			return pattern;
-		});
-
-	return function(filename) {
-		filename = path.basename(filename);
-		return patterns.some(function(pattern) {
-			return pattern.test(filename);
-		});
-	};
-};
-
-var readSync = function(filename) {
-	return fs.existsSync(filename) && fs.readFileSync(filename, 'utf-8');
-};
-
 module.exports = function(remote, id, opts) {
 	if (!id) return ui.error('Service name required');
 
@@ -65,7 +43,7 @@ module.exports = function(remote, id, opts) {
 		var repo = !opts.stdin && !opts.url && findGitRepository();
 		if (repo && repo !== process.cwd() && !opts.force) return ui.error('You are in a git repo but not at the root. Use --force to ignore');
 
-		var ignore = opts.ignore === false ? noop : compileIgnore(readSync('.hmsignore') || readSync('.gitignore') || '');
+		var ignore = opts.ignore === false ? noop : (ignoreFile.sync('.hmsignore') || ignoreFile.sync('.gitignore') || '');
 		var c = client(remote);
 
 		var tmp = path.join(os.tmpDir(), 'hms-'+id+'.tgz');
