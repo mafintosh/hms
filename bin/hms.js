@@ -27,7 +27,7 @@ var remotes = function(word, opts, cb) {
 };
 
 var resolve = function(remote, opts) {
-	if (!remote) return require('../lib/ui').error('Remote is required');
+	if (!remote) return ui.error('Remote is required');
 
 	var route;
 	if (remote.indexOf('/') > -1) {
@@ -159,12 +159,13 @@ tab('docks')
   });
 
 tab('ps')
-	('--env', '-e')
-	(remotes)
-	(ids)
-	(function(remote, id, opts) {
-		require('../commands/ps')(resolve(remote, opts), id, opts);
-	});
+  ('--env', '-e')
+  (remotes)
+  (ids)
+  (function(remote, id, opts) {
+    ui.warning('`ps` has been deprecated in favour of the `info` command')
+    require('../commands/ps')(resolve(remote, opts), id, opts);
+  });
 
 tab('info')
 	(remotes)
