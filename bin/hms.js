@@ -127,6 +127,13 @@ tab('list')
     ui.warning('`list` has been depricated, use `remotes` or `docks` instead');
   });
 
+tab('services')
+  (remotes)
+  (ids)
+  (function(remote, id, opts) {
+    require('../commands/services')(resolve(remote, opts), id, opts)
+  });
+
 tab('ps')
 	('--env', '-e')
 	(remotes)
