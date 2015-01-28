@@ -22,45 +22,45 @@ var getPackageName = function() {
 }
 
 var remotes = function(word, opts, cb) {
-	if (word.indexOf('@') > -1) return cb(null, '@host');
-	cb(null, rm(opts.config).list());
+  if (word.indexOf('@') > -1) return cb(null, '@host');
+  cb(null, rm(opts.config).list());
 };
 
 var resolve = function(remote, opts) {
-	if (!remote) return ui.error('Remote is required');
+  if (!remote) return ui.error('Remote is required');
 
-	var route;
-	if (remote.indexOf('/') > -1) {
-		route = remote.split('/')[1];
-		remote = remote.split('/')[0];
-	}
+  var route;
+  if (remote.indexOf('/') > -1) {
+    route = remote.split('/')[1];
+    remote = remote.split('/')[0];
+  }
 
-	return require('xtend')({route:route}, rm(opts.config).read(remote) || {url:remote}, opts);
+  return require('xtend')({route:route}, rm(opts.config).read(remote) || {url:remote}, opts);
 };
 
 var help = function() {
-	process.stderr.write(require('fs').readFileSync(require('path').join(__dirname, 'help')));
-	process.exit(1);
+  process.stderr.write(require('fs').readFileSync(require('path').join(__dirname, 'help')));
+  process.exit(1);
 };
 
 var ids = function(word, opts, cb) {
-	var client = require('../');
-	var name = opts._[1];
+  var client = require('../');
+  var name = opts._[1];
 
-	var c = client(resolve(opts._[1], opts));
-	var cached = rm(opts.config).cache(name, 'ids');
+  var c = client(resolve(opts._[1], opts));
+  var cached = rm(opts.config).cache(name, 'ids');
 
-	if (cached) return cb(null, cached);
+  if (cached) return cb(null, cached);
 
-	c.list(function(err, list) {
-		if (err) return cb(err);
+  c.list(function(err, list) {
+    if (err) return cb(err);
 
-		list = list.map(function(service) {
-			return service.id;
-		});
+    list = list.map(function(service) {
+      return service.id;
+    });
 
-		cb(null, rm(opts.config).cache(name, 'ids', list));
-	});
+    cb(null, rm(opts.config).cache(name, 'ids', list));
+  });
 };
 
 var docks = function(word, opts, cb) {
@@ -81,63 +81,63 @@ var docks = function(word, opts, cb) {
 };
 
 tab('*')
-	('--config', '-c', '@file')
-	('--force', '-f')
-	('--key', '-i', '-k', '@file')
-	('--passphrase');
+  ('--config', '-c', '@file')
+  ('--force', '-f')
+  ('--key', '-i', '-k', '@file')
+  ('--passphrase');
 
 tab('remotes')
-	('--yes', '-y')
-	('--fingerprint')
-	('--no-fingerprint')
-	(['add', 'remove', 'list'])
-	(remotes)
-	('@host')
-	(function(cmd, remote, host, opts) {
-		require('../commands/remotes')(cmd, remote, host, opts);
-	});
+  ('--yes', '-y')
+  ('--fingerprint')
+  ('--no-fingerprint')
+  (['add', 'remove', 'list'])
+  (remotes)
+  ('@host')
+  (function(cmd, remote, host, opts) {
+    require('../commands/remotes')(cmd, remote, host, opts);
+  });
 
 tab('add')
-	('--start', '-s')
-	('--build', '-b')
-	('--tag', '-t')
-	('--limit', '-l')
-	('--env', '-e')
-	(remotes)
-	(ids)
-	(function(remote, id, opts) {
-		id = id || getPackageName()
-		rm(opts.config).cache(remote, 'ids', null);
-		require('../commands/add')(resolve(remote, opts), id, opts);
-	});
+  ('--start', '-s')
+  ('--build', '-b')
+  ('--tag', '-t')
+  ('--limit', '-l')
+  ('--env', '-e')
+  (remotes)
+  (ids)
+  (function(remote, id, opts) {
+    id = id || getPackageName()
+    rm(opts.config).cache(remote, 'ids', null);
+    require('../commands/add')(resolve(remote, opts), id, opts);
+  });
 
 tab('remove')
-	(remotes)
-	(ids)
-	(function(remote, id, opts) {
-		id = id || getPackageName()
-		rm(opts.config).cache(remote, 'ids', null);
-		require('../commands/remove')(resolve(remote, opts), id, opts);
-	});
+  (remotes)
+  (ids)
+  (function(remote, id, opts) {
+    id = id || getPackageName()
+    rm(opts.config).cache(remote, 'ids', null);
+    require('../commands/remove')(resolve(remote, opts), id, opts);
+  });
 
 tab('update')
-	('--start', '-s')
-	('--build', '-b')
-	('--tag', '-t')
-	('--untag', '-u')
-	('--limit', '-l')
-	('--env', '-e')
-	('--restart')
-	('--no-start')
-	('--no-build')
-	('--no-limit')
-	('--no-env')
-	(remotes)
-	(ids)
-	(function(remote, id, opts) {
-		id = id || getPackageName()
-		require('../commands/update')(resolve(remote, opts), id, opts);
-	});
+  ('--start', '-s')
+  ('--build', '-b')
+  ('--tag', '-t')
+  ('--untag', '-u')
+  ('--limit', '-l')
+  ('--env', '-e')
+  ('--restart')
+  ('--no-start')
+  ('--no-build')
+  ('--no-limit')
+  ('--no-env')
+  (remotes)
+  (ids)
+  (function(remote, id, opts) {
+    id = id || getPackageName()
+    require('../commands/update')(resolve(remote, opts), id, opts);
+  });
 
 tab('list')
   (function() {
@@ -168,120 +168,120 @@ tab('ps')
   });
 
 tab('info')
-	(remotes)
-	(ids)
-	(function(remote, id, opts) {
-		id = id || getPackageName()
-		require('../commands/info')(resolve(remote, opts), id, opts);
-	});
+  (remotes)
+  (ids)
+  (function(remote, id, opts) {
+    id = id || getPackageName()
+    require('../commands/info')(resolve(remote, opts), id, opts);
+  });
 
 tab('status')
-	(remotes)
-	(ids)
-	(function(remote, id, opts) {
-		require('../commands/status')(resolve(remote, opts), id, opts);
-	});
+  (remotes)
+  (ids)
+  (function(remote, id, opts) {
+    require('../commands/status')(resolve(remote, opts), id, opts);
+  });
 
 tab('start')
-	('--no-log')
-	(remotes)
-	(ids)
-	(function(remote, id, opts) {
-		id = id || getPackageName()
-		require('../commands/start')(resolve(remote, opts), id, opts);
-	});
+  ('--no-log')
+  (remotes)
+  (ids)
+  (function(remote, id, opts) {
+    id = id || getPackageName()
+    require('../commands/start')(resolve(remote, opts), id, opts);
+  });
 
 tab('stop')
-	(remotes)
-	(ids)
-	(function(remote, id, opts) {
-		id = id || getPackageName()
-		require('../commands/stop')(resolve(remote, opts), id, opts);
-	});
+  (remotes)
+  (ids)
+  (function(remote, id, opts) {
+    id = id || getPackageName()
+    require('../commands/stop')(resolve(remote, opts), id, opts);
+  });
 
 tab('restart')
-	('--no-log')
-	('--no-sync')
-	(remotes)
-	(ids)
-	(function(remote, id, opts) {
-		id = id || getPackageName()
-		require('../commands/restart')(resolve(remote, opts), id, opts);
-	});
+  ('--no-log')
+  ('--no-sync')
+  (remotes)
+  (ids)
+  (function(remote, id, opts) {
+    id = id || getPackageName()
+    require('../commands/restart')(resolve(remote, opts), id, opts);
+  });
 
 tab('log')
-	('--no-events')
-	('--no-id')
-	('--no-origin')
-	(remotes)
-	(ids)
-	(function(remote, id, opts) {
-		require('../commands/log')(resolve(remote, opts), id, opts);
-	});
+  ('--no-events')
+  ('--no-id')
+  ('--no-origin')
+  (remotes)
+  (ids)
+  (function(remote, id, opts) {
+    require('../commands/log')(resolve(remote, opts), id, opts);
+  });
 
 tab('sync')
-	('--restart')
-	(remotes)
-	(ids)
-	(function(remote, id, opts) {
-		id = id || getPackageName()
-		require('../commands/sync')(resolve(remote, opts), id, opts);
-	});
+  ('--restart')
+  (remotes)
+  (ids)
+  (function(remote, id, opts) {
+    id = id || getPackageName()
+    require('../commands/sync')(resolve(remote, opts), id, opts);
+  });
 
 tab('deploy')
-	('--revision', '-r')
-	('--no-log')
-	('--stdin')
-	('--url')
-	('--file')
-	('--retry')
-	(remotes)
-	(ids)
-	(function(remote, id, opts) {
-		id = id || getPackageName()
-		require('../commands/deploy')(resolve(remote, opts), id, opts);
-	});
+  ('--revision', '-r')
+  ('--no-log')
+  ('--stdin')
+  ('--url')
+  ('--file')
+  ('--retry')
+  (remotes)
+  (ids)
+  (function(remote, id, opts) {
+    id = id || getPackageName()
+    require('../commands/deploy')(resolve(remote, opts), id, opts);
+  });
 
 tab('tarball')
-	('--out', '-o', '@file')
-	(remotes)
-	(ids)
-	(function(remote, id, opts) {
-		id = id || getPackageName()
-		require('../commands/tarball')(resolve(remote, opts), id, opts);
-	});
+  ('--out', '-o', '@file')
+  (remotes)
+  (ids)
+  (function(remote, id, opts) {
+    id = id || getPackageName()
+    require('../commands/tarball')(resolve(remote, opts), id, opts);
+  });
 
 tab('dock')
-	(remotes)
-	('--id', '-i', os.hostname())
-	('--port', '-p', 10002)
-	('--db', '@file')
-	('--tag', '-t')
-	('--default')
-	(function(remote, opts) {
-		require('../commands/dock')(resolve(remote, opts), opts);
-	});
+  (remotes)
+  ('--id', '-i', os.hostname())
+  ('--port', '-p', 10002)
+  ('--db', '@file')
+  ('--tag', '-t')
+  ('--default')
+  (function(remote, opts) {
+    require('../commands/dock')(resolve(remote, opts), opts);
+  });
 
 tab('terminal')
-	('--port', '-p', 10002)
-	('--dock', '-d')
-	('--db', '@file')
-	('--tag', '-t')
-	('--env', '-e')
-	(function(opts) {
-		require('../commands/terminal')(opts);
-	});
+  ('--port', '-p', 10002)
+  ('--dock', '-d')
+  ('--db', '@file')
+  ('--tag', '-t')
+  ('--env', '-e')
+  (function(opts) {
+    require('../commands/terminal')(opts);
+  });
 
 tab('doctor')
-	(function(opts) {
-		require('../commands/doctor')(opts);
-	});
+  (function(opts) {
+    require('../commands/doctor')(opts);
+  });
 
 tab()
-	('--version', '-v')
-	(function(opts) {
-		if (opts.version) return console.log('v'+require('../package.json').version);
-		help();
-	});
+  ('--version', '-v')
+  (function(opts) {
+    if (opts.version) return console.log('v'+require('../package.json').version);
+    help();
+  });
 
 tab.parse() || help();

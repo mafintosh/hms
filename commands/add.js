@@ -3,21 +3,21 @@ var ui = require('../lib/ui');
 var updateable = require('../lib/updateable');
 
 var help = 'You need to specify the following properties\n'+
-	'--start [start-script]';
+      '--start [start-script]';
 
 module.exports = function(remote, id, opts) {
-	if (!id) return ui.error('Service name required');
-	if (!opts.start && opts.start !== false) return ui.error(help);
+  if (!id) return ui.error('Service name required');
+  if (!opts.start && opts.start !== false) return ui.error(help);
 
-	var c = client(remote);
-	var unspin = ui.spin('Adding', id);
+  var c = client(remote);
+  var unspin = ui.spin('Adding', id);
 
-	updateable(id, {}, opts, function(err) {
-		if (err) return unspin(err);
+  updateable(id, {}, opts, function(err) {
+    if (err) return unspin(err);
 
-		opts.tags = [].concat(opts.tag || []);
-		delete opts.tag;
+    opts.tags = [].concat(opts.tag || []);
+    delete opts.tag;
 
-		c.add(id, opts, unspin);
-	});
+    c.add(id, opts, unspin);
+  });
 };

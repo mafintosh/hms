@@ -1,6 +1,4 @@
-var relativeDate = require('relative-date');
 var client = require('../');
-var ui = require('../lib/ui');
 
 module.exports = function(remote, id, opts) {
   var c = client(remote);
