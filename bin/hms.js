@@ -63,6 +63,23 @@ var ids = function(word, opts, cb) {
 	});
 };
 
+var docks = function(word, opts, cb) {
+  var client = require('../');
+  var name = opts._[1];
+
+  var c = client(resolve(opts._[1], opts));
+  var cached = rm(opts.config).cache(name, 'docks');
+
+  if (cached) return cb(null, cached);
+
+  c.ps(function(err, docks) {
+    if (err) return cb(err);
+    docks = [].concat(docks).map(function(dock) { return dock.id; }).sort();
+
+    cb(null, rm(opts.config).cache(name, 'docks', docks));
+  });
+};
+
 tab('*')
 	('--config', '-c', '@file')
 	('--force', '-f')
@@ -132,6 +149,13 @@ tab('services')
   (ids)
   (function(remote, id, opts) {
     require('../commands/services')(resolve(remote, opts), id, opts)
+  });
+
+tab('docks')
+  (remotes)
+  (docks)
+  (function(remote, dock, opts) {
+    require('../commands/docks')(resolve(remote, opts), dock, opts)
   });
 
 tab('ps')
