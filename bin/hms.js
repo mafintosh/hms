@@ -2,6 +2,7 @@
 
 var tab = require('tabalot');
 var rm = require('../lib/remotes');
+var ui = require('../lib/ui');
 var os = require('os');
 
 var path = require('path')
@@ -122,11 +123,9 @@ tab('update')
 	});
 
 tab('list')
-	(remotes)
-	(ids)
-	(function(remote, id, opts) {
-		require('../commands/list')(resolve(remote, opts), id, opts);
-	});
+  (function() {
+    ui.warning('`list` has been depricated, use `remotes` or `docks` instead');
+  });
 
 tab('ps')
 	('--env', '-e')
