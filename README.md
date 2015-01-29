@@ -27,7 +27,7 @@ hms uses ssh to contact the server so `username@your-server.com` should be simil
 Then add a simple node app
 
 	hms add my-remote my-app --start 'node .' --build 'npm install' --tag my-dock
-	hms list my-remote my-app
+	hms info my-remote my-app
 
 The `--start` argument is your start script, `--build` is your build script and `--docks` tells hms to deploy it to 1 dock.
 
