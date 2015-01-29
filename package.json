@@ -1,6 +1,6 @@
 {
   "name": "hms",
-  "version": "2.0.0a",
+  "version": "2.0.0-rc1",
   "description": "Work in progress. Ship all kinds of services",
   "repository": {
     "type": "git",
@@ -43,13 +43,20 @@
   "bin": {
     "hms": "./bin/hms.js"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "standard": "^2.1.1"
+  },
   "bugs": {
     "url": "https://github.com/mafintosh/hms/issues"
   },
+  "standard": {
+    "ignore": [
+      "bin/hms.js"
+    ]
+  },
   "homepage": "https://github.com/mafintosh/hms",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "standard"
   },
   "author": "Mathias Buus"
 }

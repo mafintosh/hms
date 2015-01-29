@@ -1,90 +1,90 @@
 #!/usr/bin/env node
 
-var tab = require('tabalot');
-var rm = require('../lib/remotes');
-var ui = require('../lib/ui');
-var os = require('os');
+var tab = require('tabalot')
+var rm = require('../lib/remotes')
+var ui = require('../lib/ui')
+var os = require('os')
 
 var path = require('path')
 var fs = require('fs')
 
-var getPackageName = function() {
-    var package = path.join(process.cwd(), 'package.json')
-    if (fs.existsSync(package)) {
-        try {
-            var content = fs.readFileSync(package)
-            return JSON.parse(content).name
-        }
-        catch(err) {}
+var getNameFromPackage = function () {
+  var packageJson = path.join(process.cwd(), 'package.json')
+  if (fs.existsSync(packageJson)) {
+    try {
+      var content = fs.readFileSync(packageJson)
+      return JSON.parse(content).name
     }
-
-    return undefined;
-}
-
-var remotes = function(word, opts, cb) {
-  if (word.indexOf('@') > -1) return cb(null, '@host');
-  cb(null, rm(opts.config).list());
-};
-
-var resolve = function(remote, opts) {
-  if (!remote) return ui.error('Remote is required');
-
-  var route;
-  if (remote.indexOf('/') > -1) {
-    route = remote.split('/')[1];
-    remote = remote.split('/')[0];
+    catch(err) {}
   }
 
-  return require('xtend')({route:route}, rm(opts.config).read(remote) || {url:remote}, opts);
-};
+  return undefined
+}
 
-var help = function() {
-  process.stderr.write(require('fs').readFileSync(require('path').join(__dirname, 'help')));
-  process.exit(1);
-};
+var remotes = function (word, opts, cb) {
+  if (word.indexOf('@') > -1) return cb(null, '@host')
+  cb(null, rm(opts.config).list())
+}
 
-var ids = function(word, opts, cb) {
-  var client = require('../');
-  var name = opts._[1];
+var resolve = function (remote, opts) {
+  if (!remote) return ui.error('Remote is required')
 
-  var c = client(resolve(opts._[1], opts));
-  var cached = rm(opts.config).cache(name, 'ids');
+  var route
+  if (remote.indexOf('/') > -1) {
+    route = remote.split('/')[1]
+    remote = remote.split('/')[0]
+  }
 
-  if (cached) return cb(null, cached);
+  return require('xtend')({route: route}, rm(opts.config).read(remote) || {url: remote}, opts)
+}
 
-  c.list(function(err, list) {
-    if (err) return cb(err);
+var help = function () {
+  process.stderr.write(require('fs').readFileSync(require('path').join(__dirname, 'help')))
+  process.exit(1)
+}
 
-    list = list.map(function(service) {
-      return service.id;
-    });
+var ids = function (word, opts, cb) {
+  var client = require('../')
+  var name = opts._[1]
 
-    cb(null, rm(opts.config).cache(name, 'ids', list));
-  });
-};
+  var c = client(resolve(opts._[1], opts))
+  var cached = rm(opts.config).cache(name, 'ids')
 
-var docks = function(word, opts, cb) {
-  var client = require('../');
-  var name = opts._[1];
+  if (cached) return cb(null, cached)
 
-  var c = client(resolve(opts._[1], opts));
-  var cached = rm(opts.config).cache(name, 'docks');
+  c.list(function (err, list) {
+    if (err) return cb(err)
 
-  if (cached) return cb(null, cached);
+    list = list.map(function (service) {
+      return service.id
+    })
 
-  c.ps(function(err, docks) {
-    if (err) return cb(err);
-    docks = [].concat(docks).map(function(dock) { return dock.id; }).sort();
+    cb(null, rm(opts.config).cache(name, 'ids', list))
+  })
+}
 
-    cb(null, rm(opts.config).cache(name, 'docks', docks));
-  });
-};
+var docks = function (word, opts, cb) {
+  var client = require('../')
+  var name = opts._[1]
+
+  var c = client(resolve(opts._[1], opts))
+  var cached = rm(opts.config).cache(name, 'docks')
+
+  if (cached) return cb(null, cached)
+
+  c.ps(function (err, docks) {
+    if (err) return cb(err)
+    docks = [].concat(docks).map(function (dock) { return dock.id }).sort()
+
+    cb(null, rm(opts.config).cache(name, 'docks', docks))
+  })
+}
 
 tab('*')
   ('--config', '-c', '@file')
   ('--force', '-f')
   ('--key', '-i', '-k', '@file')
-  ('--passphrase');
+  ('--passphrase')
 
 tab('remotes')
   ('--yes', '-y')
@@ -93,9 +93,9 @@ tab('remotes')
   (['add', 'remove', 'list'])
   (remotes)
   ('@host')
-  (function(cmd, remote, host, opts) {
-    require('../commands/remotes')(cmd, remote, host, opts);
-  });
+  (function (cmd, remote, host, opts) {
+    require('../commands/remotes')(cmd, remote, host, opts)
+  })
 
 tab('add')
   ('--start', '-s')
@@ -105,20 +105,20 @@ tab('add')
   ('--env', '-e')
   (remotes)
   (ids)
-  (function(remote, id, opts) {
-    id = id || getPackageName()
-    rm(opts.config).cache(remote, 'ids', null);
-    require('../commands/add')(resolve(remote, opts), id, opts);
-  });
+  (function (remote, id, opts) {
+    id = id || getNameFromPackage()
+    rm(opts.config).cache(remote, 'ids', null)
+    require('../commands/add')(resolve(remote, opts), id, opts)
+  })
 
 tab('remove')
   (remotes)
   (ids)
-  (function(remote, id, opts) {
-    id = id || getPackageName()
-    rm(opts.config).cache(remote, 'ids', null);
-    require('../commands/remove')(resolve(remote, opts), id, opts);
-  });
+  (function (remote, id, opts) {
+    id = id || getNameFromPackage()
+    rm(opts.config).cache(remote, 'ids', null)
+    require('../commands/remove')(resolve(remote, opts), id, opts)
+  })
 
 tab('update')
   ('--start', '-s')
@@ -134,80 +134,80 @@ tab('update')
   ('--no-env')
   (remotes)
   (ids)
-  (function(remote, id, opts) {
-    id = id || getPackageName()
-    require('../commands/update')(resolve(remote, opts), id, opts);
-  });
+  (function (remote, id, opts) {
+    id = id || getNameFromPackage()
+    require('../commands/update')(resolve(remote, opts), id, opts)
+  })
 
 tab('list')
-  (function() {
-    ui.warning('`list` has been depricated, use `remotes` or `docks` instead');
-  });
+  (function () {
+    ui.warning('`list` has been depricated, use `remotes` or `docks` instead')
+  })
 
 tab('services')
   (remotes)
   (ids)
-  (function(remote, id, opts) {
+  (function (remote, id, opts) {
     require('../commands/services')(resolve(remote, opts), id, opts)
-  });
+  })
 
 tab('docks')
   (remotes)
   (docks)
-  (function(remote, dock, opts) {
+  (function (remote, dock, opts) {
     require('../commands/docks')(resolve(remote, opts), dock, opts)
-  });
+  })
 
 tab('ps')
   ('--env', '-e')
   (remotes)
   (ids)
-  (function(remote, id, opts) {
+  (function (remote, id, opts) {
     ui.warning('`ps` has been deprecated in favour of the `info` command')
-    require('../commands/ps')(resolve(remote, opts), id, opts);
-  });
+    require('../commands/ps')(resolve(remote, opts), id, opts)
+  })
 
 tab('info')
   (remotes)
   (ids)
-  (function(remote, id, opts) {
-    id = id || getPackageName()
-    require('../commands/info')(resolve(remote, opts), id, opts);
-  });
+  (function (remote, id, opts) {
+    id = id || getNameFromPackage()
+    require('../commands/info')(resolve(remote, opts), id, opts)
+  })
 
 tab('status')
   (remotes)
   (ids)
-  (function(remote, id, opts) {
-    require('../commands/status')(resolve(remote, opts), id, opts);
-  });
+  (function (remote, id, opts) {
+    require('../commands/status')(resolve(remote, opts), id, opts)
+  })
 
 tab('start')
   ('--no-log')
   (remotes)
   (ids)
-  (function(remote, id, opts) {
-    id = id || getPackageName()
-    require('../commands/start')(resolve(remote, opts), id, opts);
-  });
+  (function (remote, id, opts) {
+    id = id || getNameFromPackage()
+    require('../commands/start')(resolve(remote, opts), id, opts)
+  })
 
 tab('stop')
   (remotes)
   (ids)
-  (function(remote, id, opts) {
-    id = id || getPackageName()
-    require('../commands/stop')(resolve(remote, opts), id, opts);
-  });
+  (function (remote, id, opts) {
+    id = id || getNameFromPackage()
+    require('../commands/stop')(resolve(remote, opts), id, opts)
+  })
 
 tab('restart')
   ('--no-log')
   ('--no-sync')
   (remotes)
   (ids)
-  (function(remote, id, opts) {
-    id = id || getPackageName()
-    require('../commands/restart')(resolve(remote, opts), id, opts);
-  });
+  (function (remote, id, opts) {
+    id = id || getNameFromPackage()
+    require('../commands/restart')(resolve(remote, opts), id, opts)
+  })
 
 tab('log')
   ('--no-events')
@@ -215,18 +215,18 @@ tab('log')
   ('--no-origin')
   (remotes)
   (ids)
-  (function(remote, id, opts) {
-    require('../commands/log')(resolve(remote, opts), id, opts);
-  });
+  (function (remote, id, opts) {
+    require('../commands/log')(resolve(remote, opts), id, opts)
+  })
 
 tab('sync')
   ('--restart')
   (remotes)
   (ids)
-  (function(remote, id, opts) {
-    id = id || getPackageName()
-    require('../commands/sync')(resolve(remote, opts), id, opts);
-  });
+  (function (remote, id, opts) {
+    id = id || getNameFromPackage()
+    require('../commands/sync')(resolve(remote, opts), id, opts)
+  })
 
 tab('deploy')
   ('--revision', '-r')
@@ -237,19 +237,19 @@ tab('deploy')
   ('--retry')
   (remotes)
   (ids)
-  (function(remote, id, opts) {
-    id = id || getPackageName()
-    require('../commands/deploy')(resolve(remote, opts), id, opts);
-  });
+  (function (remote, id, opts) {
+    id = id || getNameFromPackage()
+    require('../commands/deploy')(resolve(remote, opts), id, opts)
+  })
 
 tab('tarball')
   ('--out', '-o', '@file')
   (remotes)
   (ids)
-  (function(remote, id, opts) {
-    id = id || getPackageName()
-    require('../commands/tarball')(resolve(remote, opts), id, opts);
-  });
+  (function (remote, id, opts) {
+    id = id || getNameFromPackage()
+    require('../commands/tarball')(resolve(remote, opts), id, opts)
+  })
 
 tab('dock')
   (remotes)
@@ -258,9 +258,9 @@ tab('dock')
   ('--db', '@file')
   ('--tag', '-t')
   ('--default')
-  (function(remote, opts) {
-    require('../commands/dock')(resolve(remote, opts), opts);
-  });
+  (function (remote, opts) {
+    require('../commands/dock')(resolve(remote, opts), opts)
+  })
 
 tab('terminal')
   ('--port', '-p', 10002)
@@ -268,20 +268,20 @@ tab('terminal')
   ('--db', '@file')
   ('--tag', '-t')
   ('--env', '-e')
-  (function(opts) {
-    require('../commands/terminal')(opts);
-  });
+  (function (opts) {
+    require('../commands/terminal')(opts)
+  })
 
 tab('doctor')
-  (function(opts) {
-    require('../commands/doctor')(opts);
-  });
+  (function (opts) {
+    require('../commands/doctor')(opts)
+  })
 
 tab()
   ('--version', '-v')
-  (function(opts) {
-    if (opts.version) return console.log('v'+require('../package.json').version);
-    help();
-  });
+  (function (opts) {
+    if (opts.version) return console.log('v' + require('../package.json').version)
+    help()
+  })
 
-tab.parse() || help();
+tab.parse() || help()
