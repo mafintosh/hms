@@ -13,11 +13,13 @@ Afterwards you should have an command line tool called `hms`.
 First ssh to a remote server and install hms.
 Then start up a terminal.
 
-	hms terminal
+	hms run-terminal
 
 In a new folder start the dock (or multiple docks as seperate processes). The dock will run your apps
 
-	hms dock [url-to-a-terminal] --tag my-dock # add a some tags
+	hms run-dock localhost:10002 --tag my-dock --port 10003 # add a some tags
+
+`localhost:10002` is the address to the terminal running on the machine, the newly created dock will run on `localhost:10003`.
 
 Then on your local machine add the remote
 
@@ -75,7 +77,7 @@ Add a new service.
 * `--build,-b` to specify a `build` script. Ie. `npm install .` to install node modules
 * `--tag,-t` to specify the docks tags to match when choosing where to deploy to.
 * `--limit,-l` to set a max limit on the number of docks to deploy to.
-* `--env,-e` to set env varibles. Format is `ENV_VAR=value,ENV_VAR2=value2`
+* `--env,-e` to set env varibles. Format is `ENV_VAR=value` if more than one env variable is needed multiple `--env` can be used.
 
 #### `hms update [remote] [service-name]`
 
@@ -117,14 +119,14 @@ hms does not save any logs so this is just the live tail of stdout/stderr and va
 
 Run the following commands on your remote server that you want to deploy to
 
-#### `hms terminal`
+#### `hms run-terminal`
 
 Starts a "build-and-distribute" hub that you can deploy to. After you deploy to a terminal it will run the build script and distribute the build to the docks.
 
 * `--port,-p` to change the port the terminal binds to. Defaults to 10002
 * `--db` to set the db file
 
-#### `hms dock [remote]`
+#### `hms run-dock [remote]`
 
 Starts a dock that can run and manage services.
 

@@ -19,5 +19,5 @@ Available commands are:
   status       exit with code != 0 if service crashed
 
 Use the following commands to setup a remote
-  dock         start a service dock
+  run-dock     start a service dock
   terminal     start a service terminal
