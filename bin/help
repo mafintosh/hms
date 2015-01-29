@@ -1,23 +1,23 @@
 Usage: hms [command] [remote] [service|dock?] [options?]
 
 Available commands are:
-  completion   setup tab completion
-  remotes      manage remotes
-  add          add a new service
-  update       update an existing service
-  remove       remove and stop a service
-  deploy       deploy cwd to your service
-  tarball      fetch the service as a tgz file
-  info         print detailed service info
-  services     lists available services
-  docks        lists available docks
-  start        start service processes
-  stop         stop service processes
-  restart      restart service processes
-  log          tail service logs
-  sync         force a sync
-  status       exit with code != 0 if service crashed
+  completion      setup tab completion
+  remotes         manage remotes
+  add             add a new service
+  update          update an existing service
+  remove          remove and stop a service
+  deploy          deploy cwd to your service
+  tarball         fetch the service as a tgz file
+  info            print detailed service info
+  services        lists available services
+  docks           lists available docks
+  start           start service processes
+  stop            stop service processes
+  restart         restart service processes
+  log             tail service logs
+  sync            force a sync
+  status          exit with code != 0 if service crashed
 
 Use the following commands to setup a remote
-  run-dock     start a service dock
-  terminal     start a service terminal
+  run-dock        start a service dock
+  run-terminal    start a service terminal

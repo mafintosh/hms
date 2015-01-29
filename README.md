@@ -36,9 +36,9 @@ The `--start` argument is your start script, `--build` is your build script and 
 You are now ready to deploy your service. Goto your local app folder and do
 
 	hms deploy my-remote my-app
-	hms ps my-remote my-app
+	hms info my-remote my-app
 
-The ps output should verify that the app is running.
+The info output should verify that the app is running.
 
 ## Commands
 
