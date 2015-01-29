@@ -1,5 +1,5 @@
 var client = require('../')
-var ui = require('../ui')
+var ui = require('../lib/ui')
 
 module.exports = function (remote, id, opts) {
   var c = client(remote)
