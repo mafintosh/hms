@@ -14,7 +14,7 @@ var help = 'You need to specify one (or more) of the following\n' +
   '--build [build-script]\n' +
   '--tag   [add-a-tag]\n' +
   '--untag [remove-a-tag]\n' +
-  '--env   [NAME=var,NAME2=var2]'
+  '--env   [NAME=var]'
 
 module.exports = function (remote, id, opts) {
   if (!id) return ui.error('Service name required')
