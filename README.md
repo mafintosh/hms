@@ -1,6 +1,6 @@
 # hms
 
-Work in progress. Ship all kinds of services
+Ship all kinds of services.
 
 ```
 npm install -g hms
