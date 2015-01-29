@@ -141,7 +141,7 @@ tab('update')
 
 tab('list')
   (function () {
-    ui.warning('`list` has been depricated, use `remotes` or `docks` instead')
+    ui.warning('The `list` command has been removed. Please use `services` or `docks` instead')
   })
 
 tab('services')
