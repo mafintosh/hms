@@ -1,69 +1,65 @@
-var relativeDate = require('relative-date');
-var chalk = require('chalk');
-var ui = require('../lib/ui');
-var client = require('../');
+var relativeDate = require('relative-date')
+var ui = require('../lib/ui')
+var client = require('../')
 
-module.exports = function(remote, id, opts) {
-	if (!id) return ui.error('Service name required');
-	
-	function filter(proc) {
-		return !id || proc.id === id;
-	};
+module.exports = function (remote, id, opts) {
+  if (!id) return ui.error('Service name required')
 
-	var c = client(remote);
+  function filter (proc) {
+    return !id || proc.id === id
+  }
 
-	c.get(id, function(err, service) {
-		if (err) return ui.error(err);
+  var c = client(remote)
 
-		var leaf = {};
+  c.get(id, function (err, service) {
+    if (err) return ui.error(err)
 
-		if (service.start) leaf.start = service.start;
-		if (service.build) leaf.build = service.build;
-		if (service.revision) leaf.revision = service.revision;
-		if (typeof service.limit === 'number') leaf.limit = service.limit;
-		if (service.tags) leaf.tags = service.tags;
-		if (service.env) leaf.env = service.env;
-		
-		c.ps(function(err, docks){
-			if (err) return ui.error(err);
+    var leaf = {}
 
-			var processes = {};
+    if (service.start) leaf.start = service.start
+    if (service.build) leaf.build = service.build
+    if (service.revision) leaf.revision = service.revision
+    if (typeof service.limit === 'number') leaf.limit = service.limit
+    if (service.tags) leaf.tags = service.tags
+    if (service.env) leaf.env = service.env
 
-			docks.forEach(function(dock) {
-				dock.list
-					.filter(filter)
-					.forEach(function(current) {
-						var info = {}
+    c.ps(function (err, docks) {
+      if (err) return ui.error(err)
 
-						if (current.status) info.status = current.status
-						if (current.started) info.started = relativeDate(current.started);
-						if (current.deployed) info.deployed = relativeDate(current.deployed);
-						if (current.revision) info.revision = current.revision
-						info.cwd = current.cwd
-						if (current.command) info.command = current.command.join(' ')
-						info.env = current.env
-						info.pid = current.pid
+      var processes = {}
 
-						processes[dock.id] = info
-					})
-				;
-			})
-			
-			var nodes = Object.keys(processes).sort().map(function(id) {
-				return {
-					label: id,
-					leaf: processes[id]
-				};
-			});
+      docks.forEach(function (dock) {
+        dock.list.filter(filter).forEach(function (current) {
+          var info = {}
 
-			nodes.unshift({
-				leaf: leaf
-			});
+          if (current.status) info.status = current.status
+          if (current.started) info.started = relativeDate(current.started)
+          if (current.deployed) info.deployed = relativeDate(current.deployed)
+          if (current.revision) info.revision = current.revision
+          info.cwd = current.cwd
+          if (current.command) info.command = current.command.join(' ')
+          info.env = current.env
+          info.pid = current.pid
 
-			ui.tree({
-				label: service.id,
-				nodes: nodes
-			});
-		});
-	});
-};
+          processes[dock.id] = info
+        })
+      })
+
+      var nodes = Object.keys(processes).sort().map(function (id) {
+        return {
+          label: id,
+          leaf: processes[id]
+        }
+      })
+
+      nodes.unshift({
+        leaf: leaf
+      })
+
+      ui.tree({
+        label: service.id,
+        nodes: nodes
+      })
+    })
+  })
+}

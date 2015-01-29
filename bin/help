@@ -1,4 +1,4 @@
-Usage: hms [command] [remote] [service?] [options?]
+Usage: hms [command] [remote] [service|dock?] [options?]
 
 Available commands are:
   completion   setup tab completion
@@ -9,7 +9,8 @@ Available commands are:
   deploy       deploy cwd to your service
   tarball      fetch the service as a tgz file
   info         print detailed service info
-  list         lists available services
+  services     lists available services
+  docks        lists available docks
   start        start service processes
   stop         stop service processes
   restart      restart service processes

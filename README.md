@@ -1,6 +1,6 @@
 # hms
 
-Work in progress. Ship all kinds of services
+Ship all kinds of services.
 
 ```
 npm install -g hms
@@ -27,7 +27,7 @@ hms uses ssh to contact the server so `username@your-server.com` should be simil
 Then add a simple node app
 
 	hms add my-remote my-app --start 'node .' --build 'npm install' --tag my-dock
-	hms list my-remote my-app
+	hms info my-remote my-app
 
 The `--start` argument is your start script, `--build` is your build script and `--docks` tells hms to deploy it to 1 dock.
 
@@ -43,7 +43,7 @@ The ps output should verify that the app is running.
 All commands have the following syntax
 
 ```
-hms [command] [remote] [service?] [options]
+hms [command] [remote] [service|dock?] [options]
 ```
 
 #### `hms remotes`
@@ -56,9 +56,16 @@ Manage and verify remotes.
 
 * `--key,-k` to specify an explicit ssh key. Per default `~/.ssh/id_rsa` and the ssh agent is used.
 
-#### `hms list [remote] [service-name?]`
+#### `hms docks [remote] [dock-name?]`
 
-List services and the configuration.
+List the docks on a given remote. Detailed information about the services on the given dock is printed if a dock name is specified.
+
+#### `hms services [remote] [service-name?]`
+
+List the services on a given remote. Detailed information about the service, and the docks it is running on, is printed if a service name is specified.
+
+#### `hms info [remote] [service-name]`
+Print detailed information about a service, and the docks it is running on, on a remote.
 
 #### `hms add [remote] [service-name]`
 
@@ -94,6 +101,8 @@ Stop and remove a service.
 Send a start/stop/restart signal the service. All restarts can be done gracefully by listening for `SIGTERM` and exiting nicely.
 
 #### `hms ps [remote] [service-name?]`
+
+*(deprecated, please use `info` instead)*
 
 List processes running on all docks. Omit the service name to list all processes.
 

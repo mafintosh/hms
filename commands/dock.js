@@ -1,338 +1,340 @@
-var http = require('http');
-var root = require('root');
-var flat = require('flat-file-db');
-var path = require('path');
-var fs = require('fs');
-var tar = require('tar-fs');
-var zlib = require('zlib');
-var os = require('os');
-var xtend = require('xtend');
-var rimraf = require('rimraf');
-var once = require('once');
-var pump = require('pump');
-var select = require('select-keys');
-var shell = require('shell-quote');
-var respawns = require('respawn-group');
-var protocol = require('../lib/protocol');
-var parse = require('../lib/parse-remote');
-var subscriptions = require('../lib/subscriptions');
-var pkg = require('../package.json');
+var http = require('http')
+var root = require('root')
+var flat = require('flat-file-db')
+var path = require('path')
+var fs = require('fs')
+var tar = require('tar-fs')
+var zlib = require('zlib')
+var os = require('os')
+var xtend = require('xtend')
+var rimraf = require('rimraf')
+var once = require('once')
+var pump = require('pump')
+var select = require('select-keys')
+var shell = require('shell-quote')
+var respawns = require('respawn-group')
+var protocol = require('../lib/protocol')
+var parse = require('../lib/parse-remote')
+var subscriptions = require('../lib/subscriptions')
+var pkg = require('../package.json')
 
-var noop = function() {};
+var noop = function () {}
 
 var HANDSHAKE =
-	'HTTP/1.1 101 Swiching Protocols\r\n'+
-	'Upgrade: hms-protocol\r\n'+
-	'Connection: Upgrade\r\n\r\n';
+  'HTTP/1.1 101 Swiching Protocols\r\n' +
+  'Upgrade: hms-protocol\r\n' +
+  'Connection: Upgrade\r\n\r\n'
 
-var log = function(tag) {
-	tag = tag ? '[dock] ['+tag+']' : '[dock]';
-	console.log.apply(null, arguments);
-};
+var log = function (tag) {
+  tag = tag ? '[dock] [' + tag + ']' : '[dock]'
+  console.log.apply(null, arguments)
+}
 
-module.exports = function(remote, opts) {
-	var server = root();
-	var db = flat.sync(opts.db || 'dock.db');
-	var mons = respawns();
-	var subs = subscriptions();
-	var origin = opts.id || os.hostname();
-	var tags = [].concat(opts.tag || []);
+module.exports = function (remote, opts) {
+  var server = root()
+  var db = flat.sync(opts.db || 'dock.db')
+  var mons = respawns()
+  var subs = subscriptions()
+  var origin = opts.id || os.hostname()
+  var tags = [].concat(opts.tag || [])
 
-	var me = {
-		type:'dock',
-		version: pkg.version,
-		id: origin,
-		tags: tags,
-		default: !!opts.default
-	};
+  var me = {
+    type: 'dock',
+    version: pkg.version,
+    id: origin,
+    tags: tags,
+    default: !!opts.default
+  }
 
-	subs.on('subscribe', function(id, protocol, count) {
-		if (count > 1) return;
-		log(id, 'forwarding events and output');
-	});
+  subs.on('subscribe', function (id, protocol, count) {
+    if (count > 1) return
+    log(id, 'forwarding events and output')
+  })
 
-	subs.on('unsubscribe', function(id, protocol, count) {
-		if (count) return;
-		log(id, 'unforwarding event and output');
-	});
+  subs.on('unsubscribe', function (id, protocol, count) {
+    if (count) return
+    log(id, 'unforwarding event and output')
+  })
 
-	mons.on('finalize', function(mon) {
-		var cwd = db.has(mon.id) && db.get(mon.id).cwd;
-		if (mon.cwd !== cwd) rimraf(mon.cwd, noop);
-	});
+  mons.on('finalize', function (mon) {
+    var cwd = db.has(mon.id) && db.get(mon.id).cwd
+    if (mon.cwd !== cwd) rimraf(mon.cwd, noop)
+  })
 
-	mons.on('stdout', function(mon, data) {
-		subs.publish('stdout', mon.id, origin, data);
-	});
+  mons.on('stdout', function (mon, data) {
+    subs.publish('stdout', mon.id, origin, data)
+  })
 
-	mons.on('stderr', function(mon, data) {
-		subs.publish('stderr', mon.id, origin, data);
-	});
+  mons.on('stderr', function (mon, data) {
+    subs.publish('stderr', mon.id, origin, data)
+  })
 
-	mons.on('spawn', function(mon, child) {
-		log(mon.id, 'spawned '+child.pid);
-		subs.publish('spawn', mon.id, origin, child.pid);
-	});
+  mons.on('spawn', function (mon, child) {
+    log(mon.id, 'spawned ' + child.pid)
+    subs.publish('spawn', mon.id, origin, child.pid)
+  })
 
-	mons.on('exit', function(mon, code) {
-		log(mon.id, 'exited ('+code+')');
-		subs.publish('exit', mon.id, origin, code);
-	});
+  mons.on('exit', function (mon, code) {
+    log(mon.id, 'exited (' + code + ')')
+    subs.publish('exit', mon.id, origin, code)
+  })
 
-	var remote = parse(xtend(remote));
-	var info = {};
+  remote = parse(xtend(remote))
+  var info = {}
 
-	var validService = function(service) {
-		var tags = service.tags || [];
-		if (!tags.length && opts.default) return true;
-		return [me.id].concat(me.tags).some(function(tag) {
-			return tags.indexOf(tag) > -1;
-		});
-	};
+  var validService = function (service) {
+    var tags = service.tags || []
+    if (!tags.length && opts.default) return true
+    return [me.id].concat(me.tags).some(function (tag) {
+      return tags.indexOf(tag) > -1
+    })
+  }
 
-	var onmon = function(id, service) {
-		if (!service.start || !service.cwd) return false;
+  var onmon = function (id, service) {
+    if (!service.start || !service.cwd) return false
 
-		var env = xtend({SERVICE_NAME:id}, service.env);
-		var stale = mons.get(id) || {};
-		var cmd = shell.parse(service.start, env);
-		var fresh = {command:cmd, cwd:service.cwd, env:env};
+    var env = xtend({SERVICE_NAME: id}, service.env)
+    var stale = mons.get(id) || {}
+    var cmd = shell.parse(service.start, env)
+    var fresh = {command: cmd, cwd: service.cwd, env: env}
 
-		if (JSON.stringify({command:stale.command, cwd:stale.cwd, env:stale.env}) === JSON.stringify(fresh)) return false;
+    if (JSON.stringify({command: stale.command, cwd: stale.cwd, env: stale.env}) === JSON.stringify(fresh)) return false
 
-		info[id] = {revision:service.revision, deployed:service.deployed};
-		mons.add(id, fresh);
-		return true;
-	};
+    info[id] = {revision: service.revision, deployed: service.deployed}
+    mons.add(id, fresh)
+    return true
+  }
 
-	var onstatuschange = function(id, status, cb) {
-		var s = db.get(id);
-		onmon(id, s);
+  var onstatuschange = function (id, status, cb) {
+    var s = db.get(id)
+    onmon(id, s)
 
-		var ondone = function() {
-			if (!db.has(id)) return cb();
-			var s = db.get(id);
-			s.stopped = status === 'stop';
-			db.put(id, s, cb);
-		};
+    var ondone = function () {
+      if (!db.has(id)) return cb()
+      var s = db.get(id)
+      s.stopped = status === 'stop'
+      db.put(id, s, cb)
+    }
 
-		switch (status) {
-			case 'start':
-			log(id, 'starting process');
-			if (validService(s)) mons.start(id);
-			return ondone();
+    switch (status) {
+      case 'start':
+        log(id, 'starting process')
+        if (validService(s)) mons.start(id)
+        return ondone()
 
-			case 'restart':
-			log(id, 'restarting process');
-			if (validService(s)) mons.restart(id);
-			return ondone();
+      case 'restart':
+        log(id, 'restarting process')
+        if (validService(s)) mons.restart(id)
+        return ondone()
 
-			case 'stop':
-			log(id, 'stopping process');
-			return mons.stop(id, ondone);
-		}
-	};
+      case 'stop':
+        log(id, 'stopping process')
+        return mons.stop(id, ondone)
 
-	var onprotocol = function(protocol, docking) {
-		var onnotfound = function(cb) {
-			return docking ? cb() : cb(new Error('Service not found'));
-		};
+      default:
+    }
+  }
 
-		protocol.on('get', function(id, cb) {
-			if (!db.has(id)) return onnotfound(cb);
-			cb(null, db.get(id));
-		});
+  var onprotocol = function (protocol, docking) {
+    var onnotfound = function (cb) {
+      return docking ? cb() : cb(new Error('Service not found'))
+    }
 
-		protocol.on('sync', function(id, service, cb) {
-			if (!docking) return cb(new Error('Cannot sync from a dock'));
-			if (!service) return cb(new Error('Service must be passed'));
+    protocol.on('get', function (id, cb) {
+      if (!db.has(id)) return onnotfound(cb)
+      cb(null, db.get(id))
+    })
 
-			var cwd = path.join('builds', id+'@'+service.deployed).replace(/:/g, '-');
+    protocol.on('sync', function (id, service, cb) {
+      if (!docking) return cb(new Error('Cannot sync from a dock'))
+      if (!service) return cb(new Error('Service must be passed'))
 
-			var done = once(function(err) {
-				if (err) return onerror(err);
-				log(id, 'sync succeded');
-				cb();
-			});
+      var cwd = path.join('builds', id + '@' + service.deployed).replace(/:/g, '-')
 
-			var upsert = function() {
-				service.cwd = cwd;
-				db.put(id, service, done);
-			};
+      var onerror = function (err) {
+        log(id, 'sync failed (' + err.message + ')')
+        rimraf(cwd, function () {
+          cb(err)
+        })
+      }
 
-			var onerror = function(err) {
-				log(id, 'sync failed ('+err.message+')');
-				rimraf(cwd, function() {
-					cb(err);
-				});
-			};
+      var done = once(function (err) {
+        if (err) return onerror(err)
+        log(id, 'sync succeded')
+        cb()
+      })
 
-			fs.exists(cwd, function(exists) {
-				if (exists) return upsert();
+      var upsert = function () {
+        service.cwd = cwd
+        db.put(id, service, done)
+      }
 
-				var req = http.get(xtend(remote, {
-					path:'/'+id,
-					headers:{origin:origin}
-				}));
+      fs.exists(cwd, function (exists) {
+        if (exists) return upsert()
 
-				log(id, 'fetching build from remote');
-				req.on('error', done);
-				req.on('response', function(response) {
-					if (response.statusCode !== 200) return done(new Error('Could not fetch build'));
-					pump(response, zlib.createGunzip(), tar.extract(cwd, {readable:true}), function(err) {
-						if (err) return done(err);
-						upsert();
-					});
-				});
-			});
-		});
+        var req = http.get(xtend(remote, {
+          path: '/' + id,
+          headers: {origin: origin}
+        }))
 
-		protocol.on('list', function(cb) {
-			var list = db.keys().map(function(key) {
-				return db.get(key);
-			});
+        log(id, 'fetching build from remote')
+        req.on('error', done)
+        req.on('response', function (response) {
+          if (response.statusCode !== 200) return done(new Error('Could not fetch build'))
+          pump(response, zlib.createGunzip(), tar.extract(cwd, {readable: true}), function (err) {
+            if (err) return done(err)
+            upsert()
+          })
+        })
+      })
+    })
 
-			cb(null, list);
-		});
+    protocol.on('list', function (cb) {
+      var list = db.keys().map(function (key) {
+        return db.get(key)
+      })
 
-		protocol.on('remove', function(id, cb) {
-			if (!docking) return cb(new Error('Cannot remove on a dock'));
+      cb(null, list)
+    })
 
-			log(id, 'stopping and removing process');
-			mons.remove(id, function() {
-				db.del(id, cb);
-			});
-		});
+    protocol.on('remove', function (id, cb) {
+      if (!docking) return cb(new Error('Cannot remove on a dock'))
 
-		protocol.on('update', function(id, opts, cb) {
-			if (!docking) return cb(new Error('Cannot update on a dock'));
-			if (!db.has(id)) return onnotfound(cb);
-			log(id, 'updating process');
-			db.put(id, xtend(db.get(id), select(opts, ['start', 'build', 'env', 'docks'])), cb);
-		});
+      log(id, 'stopping and removing process')
+      mons.remove(id, function () {
+        db.del(id, cb)
+      })
+    })
 
-		protocol.on('restart', function(id, cb) {
-			if (!db.has(id)) return onnotfound(cb);
-			onstatuschange(id, 'restart', cb);
-		});
+    protocol.on('update', function (id, opts, cb) {
+      if (!docking) return cb(new Error('Cannot update on a dock'))
+      if (!db.has(id)) return onnotfound(cb)
+      log(id, 'updating process')
+      db.put(id, xtend(db.get(id), select(opts, ['start', 'build', 'env', 'docks'])), cb)
+    })
 
-		protocol.on('start', function(id, cb) {
-			if (!db.has(id)) return onnotfound(cb);
-			onstatuschange(id, 'start', cb);
-		});
+    protocol.on('restart', function (id, cb) {
+      if (!db.has(id)) return onnotfound(cb)
+      onstatuschange(id, 'restart', cb)
+    })
 
-		protocol.on('stop', function(id, cb) {
-			if (!db.has(id)) return onnotfound(cb);
-			onstatuschange(id, 'stop', cb);
-		});
+    protocol.on('start', function (id, cb) {
+      if (!db.has(id)) return onnotfound(cb)
+      onstatuschange(id, 'start', cb)
+    })
 
-		protocol.on('ps', function(cb) {
-			var list = mons.list().map(function(mon) {
-				return xtend(mon.toJSON(), info[mon.id]);
-			});
+    protocol.on('stop', function (id, cb) {
+      if (!db.has(id)) return onnotfound(cb)
+      onstatuschange(id, 'stop', cb)
+    })
 
-			cb(null, [{id:origin, list:list}]);
-		});
+    protocol.on('ps', function (cb) {
+      var list = mons.list().map(function (mon) {
+        return xtend(mon.toJSON(), info[mon.id])
+      })
 
-		protocol.on('subscribe', function(id, cb) {
-			if (!docking && id !== '*' && !db.has(id)) return onnotfound(cb);
-			subs.subscribe(id, protocol);
-			cb();
-		});
+      cb(null, [{id: origin, list: list}])
+    })
 
-		protocol.once('subscribe', function() {
-			protocol.on('close', function() {
-				subs.clear(protocol);
-			});
-		});
+    protocol.on('subscribe', function (id, cb) {
+      if (!docking && id !== '*' && !db.has(id)) return onnotfound(cb)
+      subs.subscribe(id, protocol)
+      cb()
+    })
 
-		protocol.on('unsubscribe', function(id, cb) {
-			subs.unsubscribe(id, protocol);
-			cb();
-		});
-	};
+    protocol.once('subscribe', function () {
+      protocol.on('close', function () {
+        subs.clear(protocol)
+      })
+    })
 
-	var dropped = true;
-	var connect = function() {
-		var req = http.request(xtend(remote, {
-			method:'CONNECT',
-			headers:{
-				origin:origin
-			}
-		}));
+    protocol.on('unsubscribe', function (id, cb) {
+      subs.unsubscribe(id, protocol)
+      cb()
+    })
+  }
 
-		var reconnect = once(function() {
-			if (dropped) return setTimeout(connect, 5000);
-			dropped = true;
-			log(null, 'connection to remote dropped');
-			setTimeout(connect, 2500);
-		});
+  var dropped = true
+  var connect = function () {
+    var req = http.request(xtend(remote, {
+      method: 'CONNECT',
+      headers: {
+        origin: origin
+      }
+    }))
 
-		req.on('error', reconnect);
-		req.on('connect', function(res, socket, data) {
-			dropped = false;
-			log(null, 'connection to remote established');
-			var p = protocol(socket, data);
+    var reconnect = once(function () {
+      if (dropped) return setTimeout(connect, 5000)
+      dropped = true
+      log(null, 'connection to remote dropped')
+      setTimeout(connect, 2500)
+    })
 
-			p.on('close', reconnect);
-			p.handshake(me, function(err, handshake) {
-				if (err) return p.destroy();
-				onprotocol(p, true);
-			});
-		});
+    req.on('error', reconnect)
+    req.on('connect', function (res, socket, data) {
+      dropped = false
+      log(null, 'connection to remote established')
+      var p = protocol(socket, data)
 
-		req.end();
-	};
+      p.on('close', reconnect)
+      p.handshake(me, function (err, handshake) {
+        if (err) return p.destroy()
+        onprotocol(p, true)
+      })
+    })
 
-	server.get('/', function(req, res) {
-		res.end('hms-dock '+pkg.version+'\n');
-	});
+    req.end()
+  }
 
-	server.error(function(req, res) {
-		res.end('Cannot deploy to a dock');
-	});
+  server.get('/', function (req, res) {
+    res.end('hms-dock ' + pkg.version + '\n')
+  })
 
-	server.on('connect', function(req, socket, data) {
-		socket.write(HANDSHAKE);
-		var p = protocol(socket, data);
+  server.error(function (req, res) {
+    res.end('Cannot deploy to a dock')
+  })
 
-		p.once('handshake', function(handshake, cb) {
-			if (!handshake) handshake = {};
-			if (handshake.protocol !== protocol.version) return cb(new Error('Server and client do not speak the same protocol'));
+  server.on('connect', function (req, socket, data) {
+    socket.write(HANDSHAKE)
+    var p = protocol(socket, data)
 
-			if (handshake.type === 'client') {
-				onprotocol(p, false);
-				return cb(null, me);
-			}
+    p.once('handshake', function (handshake, cb) {
+      if (!handshake) handshake = {}
+      if (handshake.protocol !== protocol.version) return cb(new Error('Server and client do not speak the same protocol'))
 
-			cb(new Error('Invalid handshake'));
-		});
-	});
+      if (handshake.type === 'client') {
+        onprotocol(p, false)
+        return cb(null, me)
+      }
 
-	var port = opts.port || 10002;
-	server.listen(port, function(addr) {
-		log(null, origin, 'listening on', port);
+      cb(new Error('Invalid handshake'))
+    })
+  })
 
-		db.keys().forEach(function(key) {
-			var service = db.get(key);
-			if (service.stopped) onmon(key, service);
-			else onstatuschange(key, 'start', noop);
-		});
+  var port = opts.port || 10002
+  server.listen(port, function (addr) {
+    log(null, origin, 'listening on', port)
 
-		connect();
-	});
+    db.keys().forEach(function (key) {
+      var service = db.get(key)
+      if (service.stopped) onmon(key, service)
+      else onstatuschange(key, 'start', noop)
+    })
 
-	var shutdown = function() {
-		log(null, 'shutting down');
-		mons.shutdown(function() {
-			process.exit(0);
-		});
-	};
+    connect()
+  })
 
-	process.on('SIGTERM', shutdown);
-	process.on('SIGINT', shutdown);
-	process.on('error', function(err) {
-		process.stderr.write(err.stack);
-		shutdown();
-	});
-};
+  var shutdown = function () {
+    log(null, 'shutting down')
+    mons.shutdown(function () {
+      process.exit(0)
+    })
+  }
+
+  process.on('SIGTERM', shutdown)
+  process.on('SIGINT', shutdown)
+  process.on('error', function (err) {
+    process.stderr.write(err.stack)
+    shutdown()
+  })
+}
