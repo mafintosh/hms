@@ -75,7 +75,7 @@ Add a new service.
 * `--build,-b` to specify a `build` script. Ie. `npm install .` to install node modules
 * `--tag,-t` to specify the docks tags to match when choosing where to deploy to.
 * `--limit,-l` to set a max limit on the number of docks to deploy to.
-* `--env,-e` to set env varibles. Format is `ENV_VAR=value;ENV_VAR2=value2
+* `--env,-e` to set env varibles. Format is `ENV_VAR=value,ENV_VAR2=value2`
 
 #### `hms update [remote] [service-name]`
 
