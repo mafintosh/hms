@@ -9,36 +9,29 @@ npm install -g hms
 Afterwards you should have an command line tool called `hms`.
 
 ## Getting started
+HMS can deploy to any server that has ssh and a HMS terminal running. For simplicity sake will we create a HMS terminal with a dock on the local machine, and deploy a simple service to that.
 
-First ssh to a remote server and install hms.
-Then start up a terminal.
+First; create a folder on your local machine and start up a terminal from that folder.
 
-	hms run-terminal
+	hms run-terminal --dock
 
-In a new folder start the dock (or multiple docks as seperate processes). The dock will run your apps
+`localhost:10002` is the address to the terminal running on the machine. The `--dock` argument will create a dock on the terminal, and the this dock will run on `localhost:10003`.
 
-	hms run-dock localhost:10002 --tag my-dock --port 10003 # add a some tags
+A terminal is a server managing docks, and a dock is a process that you can deploy and run your services on. Let us try to create and deploy a service:
 
-`localhost:10002` is the address to the terminal running on the machine, the newly created dock will run on `localhost:10003`.
+Initialize a node project using `npm init` in a folder and implement a simple "hello, world!"-webserver. Then setup a HMS deploy environment by typing the following in the root of that project.
 
-Then on your local machine add the remote
+	hms add localhost --start 'node .' --build 'npm install'
 
-	hms remotes add my-remote username@your-server.com
+The `--start` argument specify a start script, the `--build` specify a build script that will run after a successful deploy. You can now verify this configuration by typing `hms info localhost`.
 
-hms uses ssh to contact the server so `username@your-server.com` should be similar to the arguments you passed to ssh.
-Then add a simple node app
+We are now ready to deploy the service. Still in the project root type the following:
 
-	hms add my-remote my-app --start 'node .' --build 'npm install' --tag my-dock
-	hms info my-remote my-app
+	hms deploy localhost
 
-The `--start` argument is your start script, `--build` is your build script and `--docks` tells hms to deploy it to 1 dock.
+The terminal output will show the deploy progress and the service logs when the service has started.
 
-You are now ready to deploy your service. Goto your local app folder and do
-
-	hms deploy my-remote my-app
-	hms info my-remote my-app
-
-The info output should verify that the app is running.
+HMS is not only for Node projects. By changing the start and build arguments you can deploy and run just about any service.
 
 ## Commands
 
