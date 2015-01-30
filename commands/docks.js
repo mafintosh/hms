@@ -39,7 +39,7 @@ module.exports = function (remote, id, opts) {
 
       ui.tree({
         label: 'docks',
-        nodes: [].concat(docks).map(function (dock) { return dock.id; }).sort()
+        nodes: [].concat(docks).map(function (dock) { return dock.id }).sort()
       })
     })
   }
