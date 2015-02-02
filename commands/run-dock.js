@@ -17,6 +17,7 @@ var protocol = require('../lib/protocol')
 var parse = require('../lib/parse-remote')
 var subscriptions = require('../lib/subscriptions')
 var pkg = require('../package.json')
+var generateLogger = require('log-with-namespace-and-date-stamp')
 
 var noop = function () {}
 
@@ -25,10 +26,7 @@ var HANDSHAKE =
   'Upgrade: hms-protocol\r\n' +
   'Connection: Upgrade\r\n\r\n'
 
-var log = function (tag) {
-  tag = tag ? '[dock] [' + tag + ']' : '[dock]'
-  console.log.apply(null, arguments)
-}
+var log = generateLogger('dock')
 
 module.exports = function (remote, opts) {
   var server = root()
@@ -48,12 +46,12 @@ module.exports = function (remote, opts) {
 
   subs.on('subscribe', function (id, protocol, count) {
     if (count > 1) return
-    log(id, 'forwarding events and output')
+    log('forwarding events and output', [id])
   })
 
   subs.on('unsubscribe', function (id, protocol, count) {
     if (count) return
-    log(id, 'unforwarding event and output')
+    log('unforwarding event and output', [id])
   })
 
   mons.on('finalize', function (mon) {
@@ -70,12 +68,12 @@ module.exports = function (remote, opts) {
   })
 
   mons.on('spawn', function (mon, child) {
-    log(mon.id, 'spawned ' + child.pid)
+    log('spawned ' + child.pid, [mon.id])
     subs.publish('spawn', mon.id, origin, child.pid)
   })
 
   mons.on('exit', function (mon, code) {
-    log(mon.id, 'exited (' + code + ')')
+    log('exited (' + code + ')', [mon.id])
     subs.publish('exit', mon.id, origin, code)
   })
 
@@ -118,17 +116,17 @@ module.exports = function (remote, opts) {
 
     switch (status) {
       case 'start':
-        log(id, 'starting process')
+        log('starting process', [id])
         if (validService(s)) mons.start(id)
         return ondone()
 
       case 'restart':
-        log(id, 'restarting process')
+        log('restarting process', [id])
         if (validService(s)) mons.restart(id)
         return ondone()
 
       case 'stop':
-        log(id, 'stopping process')
+        log('stopping process', [id])
         return mons.stop(id, ondone)
 
       default:
@@ -152,7 +150,7 @@ module.exports = function (remote, opts) {
       var cwd = path.join('builds', id + '@' + service.deployed).replace(/:/g, '-')
 
       var onerror = function (err) {
-        log(id, 'sync failed (' + err.message + ')')
+        log('sync failed (' + err.message + ')', [id])
         rimraf(cwd, function () {
           cb(err)
         })
@@ -160,7 +158,7 @@ module.exports = function (remote, opts) {
 
       var done = once(function (err) {
         if (err) return onerror(err)
-        log(id, 'sync succeded')
+        log('sync succeded', [id])
         cb()
       })
 
@@ -177,7 +175,7 @@ module.exports = function (remote, opts) {
           headers: {origin: origin}
         }))
 
-        log(id, 'fetching build from remote')
+        log('fetching build from remote', [id])
         req.on('error', done)
         req.on('response', function (response) {
           if (response.statusCode !== 200) return done(new Error('Could not fetch build'))
@@ -200,7 +198,7 @@ module.exports = function (remote, opts) {
     protocol.on('remove', function (id, cb) {
       if (!docking) return cb(new Error('Cannot remove on a dock'))
 
-      log(id, 'stopping and removing process')
+      log('stopping and removing process', [id])
       mons.remove(id, function () {
         db.del(id, cb)
       })
@@ -209,7 +207,7 @@ module.exports = function (remote, opts) {
     protocol.on('update', function (id, opts, cb) {
       if (!docking) return cb(new Error('Cannot update on a dock'))
       if (!db.has(id)) return onnotfound(cb)
-      log(id, 'updating process')
+      log('updating process', [id])
       db.put(id, xtend(db.get(id), select(opts, ['start', 'build', 'env', 'docks'])), cb)
     })
 
@@ -266,14 +264,14 @@ module.exports = function (remote, opts) {
     var reconnect = once(function () {
       if (dropped) return setTimeout(connect, 5000)
       dropped = true
-      log(null, 'connection to remote dropped')
+      log('connection to remote dropped')
       setTimeout(connect, 2500)
     })
 
     req.on('error', reconnect)
     req.on('connect', function (res, socket, data) {
       dropped = false
-      log(null, 'connection to remote established')
+      log('connection to remote established')
       var p = protocol(socket, data)
 
       p.on('close', reconnect)
@@ -313,7 +311,7 @@ module.exports = function (remote, opts) {
 
   var port = opts.port || 10002
   server.listen(port, function (addr) {
-    log(null, origin, 'listening on', port)
+    log(origin, 'listening on', port)
 
     db.keys().forEach(function (key) {
       var service = db.get(key)
@@ -325,7 +323,7 @@ module.exports = function (remote, opts) {
   })
 
   var shutdown = function () {
-    log(null, 'shutting down')
+    log('shutting down')
     mons.shutdown(function () {
       process.exit(0)
     })

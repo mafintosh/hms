@@ -19,6 +19,7 @@ var hooks = require('hook-scripts')()
 var protocol = require('../lib/protocol')
 var subscriptions = require('../lib/subscriptions')
 var pkg = require('../package.json')
+var generateLogger = require('log-with-namespace-and-date-stamp')
 
 var noop = function () {}
 
@@ -27,10 +28,7 @@ var HANDSHAKE =
   'Upgrade: hms-protocol\r\n' +
   'Connection: Upgrade\r\n\r\n'
 
-var log = function (tag) {
-  tag = tag ? '[term] [' + tag + ']' : '[term]'
-  console.log.apply(null, arguments)
-}
+var log = generateLogger('terminal')
 
 module.exports = function (opts) {
   var server = root()
@@ -55,7 +53,7 @@ module.exports = function (opts) {
 
     protocol.on('close', function () {
       docks.splice(docks.indexOf(handshake), 1)
-      log(null, 'connection to dock (' + handshake.id + ') dropped')
+      log('connection to dock (' + handshake.id + ') dropped')
     })
 
     protocol.on('stdout', function (id, origin, data) {
@@ -74,7 +72,7 @@ module.exports = function (opts) {
       subs.publish('exit', id, origin, code)
     })
 
-    log(null, 'connection to dock (' + handshake.id + ') established')
+    log('connection to dock (' + handshake.id + ') established')
 
     subs.subscriptions().forEach(function (key) {
       protocol.subscribe(key)
@@ -114,7 +112,7 @@ module.exports = function (opts) {
 
   subs.on('subscribe', function (id, protocol, count) {
     if (count > 1) return
-    log(id, 'subscribing to service events and logs')
+    log('subscribing to service events and logs', [id])
     forEach(docks, null, function (dock, next) {
       dock.protocol.subscribe(id, next)
     })
@@ -122,7 +120,7 @@ module.exports = function (opts) {
 
   subs.on('unsubscribe', function (id, protocol, count) {
     if (count) return
-    log(id, 'unsubscribing to service events and logs')
+    log('unsubscribing to service events and logs', [id])
     forEach(docks, null, function (dock, next) {
       dock.protocol.unsubscribe(id, next)
     })
@@ -150,7 +148,7 @@ module.exports = function (opts) {
     service.stopped = status === 'stop'
     db.put(id, service, function (err) {
       if (err) return cb(err)
-      log(id, 'sending', status, 'to docks')
+      log('sending', status, 'to docks', [id])
       forEach(docks, route, function (dock, next) {
         dock.protocol.update(id, upd, function (err) {
           if (err) return next(err)
@@ -245,19 +243,19 @@ module.exports = function (opts) {
     protocol.on('add', function (id, opts, cb) {
       if (db.has(id)) return cb(new Error('Service already exist'))
       if (!/^[a-zA-Z0-9\-\.]+$/.test(id)) return cb(new Error('Service name should be alphanumericish'))
-      log(id, 'adding new service')
+      log('adding new service', [id])
       opts.env = xtend(defaultEnv, opts.env)
       save(id, opts, cb)
     })
 
     protocol.on('update', function (id, opts, cb) {
       if (!db.has(id)) return cb(new Error('Service not found'))
-      log(id, 'updating service')
+      log('updating service', [id])
       save(id, opts, cb)
     })
 
     protocol.on('remove', function (id, cb) {
-      log(id, 'removing service')
+      log('removing service', [id])
       forEach(docks, handshake.route, function (dock, next) {
         dock.protocol.remove(id, next)
       }, function (err) {
@@ -282,7 +280,7 @@ module.exports = function (opts) {
     protocol.on('sync', function (id, service, cb) {
       if (!service) service = db.get(id)
       if (!service) return cb(new Error('Service not found'))
-      log(id, 'syncing build to docks')
+      log('syncing build to docks', [id])
       sync(service, handshake.route, cb)
     })
 
@@ -292,20 +290,20 @@ module.exports = function (opts) {
 
         var service = db.get(id)
 
-        log(id, 'checking for post-restart hook')
+        log('checking for post-restart hook', [id])
         hooks('post-restart', [id, service.revision], function (hook) {
           if (!hook) return cb()
-          log(id, 'running post-restart hook')
+          log('running post-restart hook', [id])
           cb = once(cb)
           hook.on('close', function (code) {
             var msg = 'post-restart hook exited with code: ' + code
-            log(id, msg)
+            log(msg, [id])
             if (code) return cb(new Error(msg))
             cb()
           })
           hook.on('error', cb)
-          hook.stdout.pipe(split()).on('data', log.bind(null, id))
-          hook.stderr.pipe(split()).on('data', log.bind(null, id))
+          hook.stdout.pipe(split()).on('data', function (data) { log(data, id) })
+          hook.stderr.pipe(split()).on('data', function (data) { log(data, id) })
         })
       })
     })
@@ -350,7 +348,7 @@ module.exports = function (opts) {
     var cwd = path.join('builds', id + '@' + deployed).replace(/:/g, '-')
 
     var onerror = function (status, message) {
-      log(id, 'build failed (' + message + ')')
+      log('build failed (' + message + ')', [id])
       rimraf(cwd, function () {
         res.statusCode = status
         res.addTrailers({'X-Status': status})
@@ -368,7 +366,7 @@ module.exports = function (opts) {
 
       db.put(id, service, function (err) {
         if (err) return onerror(500)
-        log(id, 'build succeded')
+        log('build succeded', [id])
         if (old) clean(old)
         delete cache[id]
         res.statusCode = status
@@ -378,14 +376,14 @@ module.exports = function (opts) {
     }
 
     var preDeployHook = function () {
-      log(id, 'checking for pre-deploy hook')
+      log('checking for pre-deploy hook', [id])
       hooks('pre-deploy', [id, req.query.revision], function (hook) {
         if (!hook) return buildStep()
-        log(id, 'running pre-deploy hook')
+        log('running pre-deploy hook', [id])
         var done = once(function (code) {
           if (util.isError(code)) return onerror(500, code.message)
           var msg = 'pre-deploy hook exited with code: ' + code
-          log(id, msg)
+          log(msg, [id])
           if (code) return onerror(500, msg)
           buildStep()
         })
@@ -420,7 +418,7 @@ module.exports = function (opts) {
       })
     }
 
-    log(id, 'receiving tarball')
+    log('receiving tarball', [id])
     res.setHeader('Trailer', 'X-Status')
     pump(req, zlib.createGunzip(), tar.extract(cwd, {readable: true}), function (err) {
       if (err) return onerror(500, err.message)
@@ -438,7 +436,7 @@ module.exports = function (opts) {
     if (!service.cwd) return res.error(404, 'No builds found')
 
     if (!cache[id]) {
-      log(id, 'writing tarball to cache')
+      log('writing tarball to cache', [id])
       cache[id] = thunky(function (cb) {
         var tmp = path.join(os.tmpDir(), 'hms-' + id + '.tgz')
         pump(tar.pack(service.cwd), zlib.createGzip(), fs.createWriteStream(tmp), function (err) {
@@ -448,7 +446,7 @@ module.exports = function (opts) {
       })
     }
 
-    log(id, 'sending tarball')
+    log('sending tarball', [id])
     cache[id](function (err, tmp) {
       if (err) return res.error(err)
       pump(fs.createReadStream(tmp), res)
@@ -485,7 +483,7 @@ module.exports = function (opts) {
 
   var port = opts.port || 10002
   server.listen(port, function () {
-    log(null, 'listening on', port)
+    log('listening on', port)
     if (opts.dock) require('./run-dock')('127.0.0.1:' + port, {port: port + 1, id: opts.id, tag: opts.tag, default: true})
     if (opts.sync === false) return
   })
