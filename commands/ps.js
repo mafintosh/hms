@@ -31,6 +31,7 @@ module.exports = function (remote, id, opts) {
         if (proc.pid)      leaf.pid = proc.pid
         if (proc.started)  leaf.started = relativeDate(proc.started)
         if (proc.deployed) leaf.deployed = relativeDate(proc.deployed)
+        if (proc.tags && proc.tags.length) leaf.tags = proc.tags.join(', ')
 
         if (opts.env && proc.env) leaf.env = proc.env
 

@@ -33,13 +33,12 @@ module.exports = function (remote, opts) {
   var db = flat.sync(opts.db || 'dock.db')
   var mons = respawns()
   var subs = subscriptions()
-  var origin = opts.id || os.hostname()
   var tags = [].concat(opts.tag || [])
 
   var me = {
     type: 'dock',
     version: pkg.version,
-    id: origin,
+    id: opts.id || os.hostname(),
     tags: tags,
     default: !!opts.default
   }
@@ -60,21 +59,21 @@ module.exports = function (remote, opts) {
   })
 
   mons.on('stdout', function (mon, data) {
-    subs.publish('stdout', mon.id, origin, data)
+    subs.publish('stdout', mon.id, me.id, data)
   })
 
   mons.on('stderr', function (mon, data) {
-    subs.publish('stderr', mon.id, origin, data)
+    subs.publish('stderr', mon.id, me.id, data)
   })
 
   mons.on('spawn', function (mon, child) {
     log('spawned ' + child.pid, [mon.id])
-    subs.publish('spawn', mon.id, origin, child.pid)
+    subs.publish('spawn', mon.id, me.id, child.pid)
   })
 
   mons.on('exit', function (mon, code) {
     log('exited (' + code + ')', [mon.id])
-    subs.publish('exit', mon.id, origin, code)
+    subs.publish('exit', mon.id, me.id, code)
   })
 
   remote = parse(xtend(remote))
@@ -172,7 +171,7 @@ module.exports = function (remote, opts) {
 
         var req = http.get(xtend(remote, {
           path: '/' + id,
-          headers: {origin: origin}
+          headers: {origin: me.id}
         }))
 
         log('fetching build from remote', [id])
@@ -228,10 +227,9 @@ module.exports = function (remote, opts) {
 
     protocol.on('ps', function (cb) {
       var list = mons.list().map(function (mon) {
-        return xtend(mon.toJSON(), info[mon.id])
+        return xtend(mon.toJSON(), {tags: db.get(mon.id).tags || []}, info[mon.id])
       })
-
-      cb(null, [{id: origin, list: list}])
+      cb(null, [{id: me.id, tags: me.tags, list: list}])
     })
 
     protocol.on('subscribe', function (id, cb) {
@@ -257,7 +255,7 @@ module.exports = function (remote, opts) {
     var req = http.request(xtend(remote, {
       method: 'CONNECT',
       headers: {
-        origin: origin
+        origin: me.id
       }
     }))
 
@@ -311,7 +309,7 @@ module.exports = function (remote, opts) {
 
   var port = opts.port || 10002
   server.listen(port, function (addr) {
-    log(origin, 'listening on', port)
+    log(me.id, 'listening on', port)
 
     db.keys().forEach(function (key) {
       var service = db.get(key)

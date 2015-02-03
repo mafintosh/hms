@@ -33,6 +33,7 @@ module.exports = function (remote, id, opts) {
           var info = {}
 
           if (current.status) info.status = current.status
+          if (current.tags && current.tags.length) info.tags = current.tags.join(', ')
           if (current.started) info.started = relativeDate(current.started)
           if (current.deployed) info.deployed = relativeDate(current.deployed)
           if (current.revision) info.revision = current.revision
