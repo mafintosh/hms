@@ -38,6 +38,7 @@ module.exports = function (remote, opts) {
   var me = {
     type: 'dock',
     version: pkg.version,
+    hostname: os.hostname(),
     id: opts.id || os.hostname(),
     tags: tags,
     default: !!opts.default
@@ -229,7 +230,12 @@ module.exports = function (remote, opts) {
       var list = mons.list().map(function (mon) {
         return xtend(mon.toJSON(), {tags: db.get(mon.id).tags || []}, info[mon.id])
       })
-      cb(null, [{id: me.id, tags: me.tags, list: list}])
+      cb(null, [{
+        id: me.id,
+        hostname: me.hostname,
+        tags: me.tags,
+        list: list
+      }])
     })
 
     protocol.on('subscribe', function (id, cb) {

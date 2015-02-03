@@ -18,6 +18,7 @@ module.exports = function (remote, id, opts) {
         nodes: docks.list.reduce(function (acc, service) {
           var leaf = {}
           leaf.status = service.status
+          if (docks.hostname) leaf.hostname = docks.hostname
           leaf.cwd = service.cwd
 
           if (service.command)  leaf.command = service.command.join(' ')

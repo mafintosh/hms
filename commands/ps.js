@@ -23,9 +23,9 @@ module.exports = function (remote, id, opts) {
         node.label = proc.id
         node.leaf = leaf
 
+        if (dock.hostname) leaf.hostname = dock.hostname
         leaf.status = proc.status
         leaf.cwd = proc.cwd
-
         if (proc.command)  leaf.command = proc.command.join(' ')
         if (proc.revision) leaf.revision = proc.revision
         if (proc.pid)      leaf.pid = proc.pid
