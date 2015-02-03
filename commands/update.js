@@ -26,7 +26,6 @@ module.exports = function (remote, id, opts) {
 
   var done = function (err) {
     if (err) return unspin(err)
-
     c.update(id, opts, function (err) {
       unspin(err)
       if (!opts.restart) return
@@ -44,13 +43,12 @@ module.exports = function (remote, id, opts) {
 
   c.get(id, function (err, service) {
     if (err) return done(err)
+    if (!Array.isArray(service.tags)) service.tags = []
 
     var tags = {}
-
-    service.tags || [].concat(opts.tag || []).forEach(function (tag) {
+    service.tags.concat(opts.tag || []).forEach(function (tag) {
       if (untags.indexOf(tag) === -1) tags[tag] = 1
     })
-
     opts.tags = Object.keys(tags)
     delete opts.tag
 
