@@ -32,6 +32,7 @@ module.exports = function (remote, id, opts) {
         dock.list.filter(filter).forEach(function (current) {
           var info = {}
 
+          if (dock.hostname) info.hostname = dock.hostname
           if (current.status) info.status = current.status
           if (current.tags && current.tags.length) info.tags = current.tags.join(', ')
           if (current.started) info.started = relativeDate(current.started)
