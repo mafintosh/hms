@@ -13,7 +13,7 @@
     "flat-file-db": "^0.1.3",
     "hms-protocol": "^1.2.2",
     "hook-scripts": "^2.0.0",
-    "http-ssh-agent": "^0.3.7",
+    "http-ssh-agent": "^1.0.1",
     "ignore-file": "^1.1.2",
     "known-hosts": "^0.1.0",
     "log-with-namespace-and-date-stamp": "^1.1.0",
