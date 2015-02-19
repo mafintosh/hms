@@ -21,10 +21,10 @@ module.exports = function (remote, id, opts) {
           if (docks.hostname) leaf.hostname = docks.hostname
           leaf.cwd = service.cwd
 
-          if (service.command)  leaf.command = service.command.join(' ')
+          if (service.command) leaf.command = service.command.join(' ')
           if (service.revision) leaf.revision = service.revision
-          if (service.pid)      leaf.pid = service.pid
-          if (service.started)  leaf.started = relativeDate(service.started)
+          if (service.pid) leaf.pid = service.pid
+          if (service.started) leaf.started = relativeDate(service.started)
           if (service.deployed) leaf.deployed = relativeDate(service.deployed)
           if (service.tags && service.tags.length) leaf.tags = service.tags.join(', ')
           if (opts.env && service.env) leaf.env = service.env

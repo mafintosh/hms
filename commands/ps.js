@@ -26,10 +26,10 @@ module.exports = function (remote, id, opts) {
         if (dock.hostname) leaf.hostname = dock.hostname
         leaf.status = proc.status
         leaf.cwd = proc.cwd
-        if (proc.command)  leaf.command = proc.command.join(' ')
+        if (proc.command) leaf.command = proc.command.join(' ')
         if (proc.revision) leaf.revision = proc.revision
-        if (proc.pid)      leaf.pid = proc.pid
-        if (proc.started)  leaf.started = relativeDate(proc.started)
+        if (proc.pid) leaf.pid = proc.pid
+        if (proc.started) leaf.started = relativeDate(proc.started)
         if (proc.deployed) leaf.deployed = relativeDate(proc.deployed)
         if (proc.tags && proc.tags.length) leaf.tags = proc.tags.join(', ')
 
