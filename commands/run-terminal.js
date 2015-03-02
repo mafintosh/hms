@@ -38,7 +38,7 @@ module.exports = function (opts) {
 
   var defaultEnv = {}
 
-  opts.env = opts.env || []
+  opts.env = [].concat(opts.env || [])
   opts.env.forEach(function (env) {
     var parts = env.trim().split(/=/)
     var key = parts[0]
