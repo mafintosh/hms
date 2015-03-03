@@ -15,7 +15,7 @@ var deck = require('deck')
 var once = require('once')
 var proc = require('child_process')
 var split = require('split2')
-var hooks = require('hook-scripts')()
+var Hooks = require('hook-scripts')
 var protocol = require('../lib/protocol')
 var subscriptions = require('../lib/subscriptions')
 var pkg = require('../package.json')
@@ -45,6 +45,8 @@ module.exports = function (opts) {
     var val = parts[1]
     if (key && val) defaultEnv[key.trim()] = val.trim()
   })
+
+  var hooks = Hooks({env: defaultEnv})
 
   var ondock = function (protocol, handshake) {
     protocol.id = handshake.id
