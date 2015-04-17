@@ -31,7 +31,16 @@ var log = generateLogger('dock')
 module.exports = function (remote, opts) {
   var server = root()
   var db = flat.sync(opts.db || 'dock.db')
-  var mons = respawns()
+  var mons = respawns({
+    sleep: [
+      1000, 1000, 1000, 1000, 1000,   // retry instantly a couple of times
+      60000, 1000, 1000, 1000, 1000,  // retry after one minute
+      300000, 1000, 1000, 1000, 1000, // retry after 5 minutes
+      300000, 1000, 1000, 1000, 1000, // retry after 5 minutes
+      300000, 1000, 1000, 1000, 1000, // retry after 5 minutes, then fail
+    ],
+    maxRestarts: 25
+  })
   var subs = subscriptions()
   var tags = [].concat(opts.tag || [])
 
