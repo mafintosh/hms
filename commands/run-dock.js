@@ -37,7 +37,7 @@ module.exports = function (remote, opts) {
       60000, 1000, 1000, 1000, 1000,  // retry after one minute
       300000, 1000, 1000, 1000, 1000, // retry after 5 minutes
       300000, 1000, 1000, 1000, 1000, // retry after 5 minutes
-      300000, 1000, 1000, 1000, 1000, // retry after 5 minutes, then fail
+      300000, 1000, 1000, 1000, 1000  // retry after 5 minutes, then fail
     ],
     maxRestarts: 25
   })
