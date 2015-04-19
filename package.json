@@ -27,7 +27,7 @@
     "readtoend": "0.0.1",
     "relative-date": "^1.1.1",
     "request": "^2.34.0",
-    "respawn-group": "^1.0.0",
+    "respawn-group": "^1.0.1",
     "rimraf": "^2.2.5",
     "root": "^0.6.0",
     "select-keys": "0.0.2",
