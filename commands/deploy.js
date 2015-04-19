@@ -145,8 +145,8 @@ module.exports = function (remote, id, opts) {
         uploading(data.percentage, data.transferred, data.speed)
       })
 
+      var first = true
       deploy.on('building', function (stream) {
-        var first = true
         var wasEmpty = false
 
         stream.pipe(split())
@@ -165,13 +165,11 @@ module.exports = function (remote, id, opts) {
             wasEmpty = false
             ui.indent(data)
           })
-          .on('end', function () {
-            if (!first) console.log()
-          })
       })
 
       deploy.on('syncing', function () {
         if (unspin) unspin()
+        if (!first) console.log()
         unspin = ui.spin('Syncing', id)
       })
 
