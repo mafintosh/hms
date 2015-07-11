@@ -8,6 +8,8 @@ npm install -g hms
 
 Afterwards you should have an command line tool called `hms`.
 
+NB. even though the terms refer to *dock* and *docks* it is not meant to be read as containerized *Docker* images. This project will not help you ship Docker images.
+
 ## Getting started
 
 First ssh to a remote server and install hms.
