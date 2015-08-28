@@ -9,7 +9,7 @@ module.exports = function (remote, id, opts) {
     return !id || proc.id === id
   }
 
-  var c = client(remote)
+  var c = client(remote, {key: opts.key})
 
   c.get(id, function (err, service) {
     if (err) return ui.error(err)

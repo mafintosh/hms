@@ -7,7 +7,7 @@ module.exports = function (remote, id, opts) {
     return info(remote, id, opts)
   }
 
-  var connection = client(remote)
+  var connection = client(remote, {key: opts.key})
   connection.list(function (err, services) {
     if (err) return ui.error(err)
 

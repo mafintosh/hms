@@ -2,7 +2,7 @@ var client = require('../')
 var ui = require('../lib/ui')
 
 module.exports = function (remote, id, opts) {
-  var c = client(remote)
+  var c = client(remote, {key: opts.key})
 
   var filter = function (proc) {
     return !id || proc.id === id

@@ -3,7 +3,7 @@ var ui = require('../lib/ui')
 var relativeDate = require('relative-date')
 
 module.exports = function (remote, id, opts) {
-  var connection = client(remote)
+  var connection = client(remote, {key: opts.key})
 
   if (id) {
     connection.ps(function (err, docks) {
