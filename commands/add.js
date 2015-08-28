@@ -9,7 +9,7 @@ module.exports = function (remote, id, opts) {
   if (!id) return ui.error('Service name required')
   if (!opts.start && opts.start !== false) return ui.error(help)
 
-  var c = client(remote)
+  var c = client(remote, {key: opts.key})
   var unspin = ui.spin('Adding', id)
 
   updateable(id, {}, opts, function (err) {

@@ -5,7 +5,7 @@ var fs = require('fs')
 module.exports = function (remote, id, opts) {
   if (!id) return ui.error('Service name required')
 
-  var c = client(remote)
+  var c = client(remote, {key: opts.key})
   var tar = c.tarball(id)
 
   tar.on('error', function (err) {
